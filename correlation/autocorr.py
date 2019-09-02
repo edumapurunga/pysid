@@ -152,11 +152,11 @@ def coeff(A, D, maxlag):
         if k <= n:
             for j in range(1, k):
                 Sk = Sk + A[j]*ryy[k - j]
-                ryy[k] = D[k]-A[k]*D[0]-Sk
+            ryy[k] = D[k]-A[k]*D[0]-Sk
         else:
             for j in range(1, n + 1):
                 Sr = Sr + A[j]*ryy[k - j]
-                ryy[k] = -Sr
+            ryy[k] = -Sr
                 
     # using the flip operation to return a vector that represents the autocorrelation from -maxlag to +maxlag
     ryyf=np.flip(ryy[1:])
