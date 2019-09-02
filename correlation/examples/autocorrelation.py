@@ -15,7 +15,7 @@ from autocorr import arma_acorr
 #%% Examples of usage of our functions
 
 Nn = 10000
-sigma2e = 1
+sigma2e = 0.5
 e = np.random.normal(0, np.sqrt(sigma2e), Nn)
 
 c1 = np.array([0.5])
@@ -39,7 +39,7 @@ maxlags = 10
 # sample-based autocorrelation using our smpl_acorr() function
 ryy, ty = smpl_acorr(y, maxlags)
 # soderstrom algorithms to compute the theoretical autocorrelation
-ryy2, ty2 = arma_acorr(c, a, maxlags)
+ryy2, ty2 = arma_acorr(c, a, sigma2e, maxlags)
 # sample-based autocorrelation using the np.correlate() numpy function
 ryy3 = np.correlate(y, y, 'full')
 ryy3 = ryy3[Nn - maxlags - 1 : Nn + maxlags]
@@ -47,9 +47,9 @@ ryy3 = ryy3[Nn - maxlags - 1 : Nn + maxlags]
 #%% Graphics
 
 plt.figure()
-plt.stem(ty2, ryy2, use_line_collection=True)
-plt.stem(ty, ryy, 'r--', use_line_collection=True)
-#plt.stem(ty, ryy3/(Nn-1), 'b--', use_line_collection=True))
+plt.stem(ty2, ryy2)
+plt.stem(ty, ryy, 'r--')
+#plt.stem(ty, ryy3/(Nn-1), 'b--')
 plt.grid(True)
 plt.xlabel("lag (samples)")
 plt.show()

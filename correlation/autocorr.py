@@ -48,7 +48,7 @@ def smpl_acorr(y, maxlag):
     # returns the sample-based autocorrelation and the lag vector
     return ryyc, tau
 
-def arma_acorr(C, A, maxlag):
+def arma_acorr(C, A, var, maxlag):
     # Description to help the user
     """Function that calculates the theoretical autocorrelation function of an ARMA process:
         A(q)y(t)=C(q)e(t), where
@@ -111,6 +111,10 @@ def arma_acorr(C, A, maxlag):
     # using the function coeff to calculate the coefficients of the correlation based on A(q) and D(q)
     ryy, tau = coeff(A, D, maxlag)
     
+    # scaling the correlation function with the variance of e(t)
+    ryy = var * ryy
+    
+    # returning the theoretical correlation and the lag vector
     return ryy, tau
     
 def coeff(A, D, maxlag):
