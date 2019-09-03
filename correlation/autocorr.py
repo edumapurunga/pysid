@@ -53,15 +53,16 @@ def arma_acorr(C, A, var, maxlag):
     """Function that calculates the theoretical autocorrelation function of an ARMA process:
         A(q)y(t)=C(q)e(t), where
         A(q) and C(q) are defined as polinomials on q (instead of q^{-1})
-        e(t) is a white noise sequence with unitary variance: E[e(t)e(t)] = 1
+        e(t) is a white noise sequence with variance: E[e(t)e(t)] = var
     
-    Inputs: C, A, maxlag
+    Inputs: C, A, var, maxlag
     Outputs: ryy, tau
     
     Inputs description:
         A = vector that contains the coefficients of A(q)
         C = vector that contains the coefficients of C(q)
-        maxlag: maximum lag that will be considered on the computation of the autocorrelation (from -maxlag to +maxlag)
+        var = variance of e(t)
+        maxlag = maximum lag that will be considered on the computation of the autocorrelation (from -maxlag to +maxlag)
             
     Outputs description:
         ryy: the autocorrelation function, calculated based on Soderstrom's algorithm
