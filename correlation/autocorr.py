@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Wed Aug 28 12:13:14 2019
 @author: Emerson Boeira
@@ -8,7 +6,7 @@ Created on Wed Aug 28 12:13:14 2019
 
 import numpy as np  # important package for scientific computing
 
-#%% Functions that calculate sample and theoric autocorrelation of ARMA processes
+#%% Functions that calculate the sample-based and the theoretical autocorrelation of ARMA processes
 
 def smpl_acorr(y, maxlag):
     # Description to help the user
@@ -148,16 +146,15 @@ def coeff(A, D, maxlag):
 
     # loop that calculates the other coefficients
     for k in range(2, maxlag + 1):
-        Sr = 0
-        Sk = 0
+        Sum = 0
         if k <= n:
             for j in range(1, k):
-                Sk = Sk + A[j]*ryy[k - j]
-            ryy[k] = D[k]-A[k]*D[0]-Sk
+                Sum = Sum + A[j]*ryy[k - j]
+            ryy[k] = D[k]-A[k]*D[0]-Sum
         else:
             for j in range(1, n + 1):
-                Sr = Sr + A[j]*ryy[k - j]
-            ryy[k] = -Sr
+                Sum = Sum + A[j]*ryy[k - j]
+            ryy[k] = -Sum
                 
     # using the flip operation to return a vector that represents the autocorrelation from -maxlag to +maxlag
     ryyf=np.flip(ryy[1:])
