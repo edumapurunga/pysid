@@ -1,12 +1,25 @@
-# sysid
+# pysid
 
-This is a System Identification package, based on numpy, that
-provide some tools based on the prediction error approach.
+This is a python System Identification package, based on numpy and scipy, that
+provide some tools for parametric identification of causal linear time-invarient systems.
+
+##Supported methods 
 
 Here are the list ot the implemented methods
 - Least Squares
 - Instrumental Variables
 - Prediction Error method
+
+## Dependencies
+
+Currently, this packages is based on numpy. For this reason the basic packages dependencies are:
+
+- Numpy
+- Scipy
+
+## Installation
+
+
 
     
 
