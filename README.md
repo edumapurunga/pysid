@@ -3,7 +3,7 @@
 This is a python System Identification package, based on numpy and scipy, that
 provide some tools for parametric identification of causal linear time-invarient systems.
 
-##Supported methods 
+## Supported methods 
 
 Here are the list ot the implemented methods
 - Least Squares
