@@ -12,9 +12,11 @@ Here are the list of the implemented methods
 
 ## Dependencies
 
-Currently, this packages is based on numpy. For this reason the basic packages dependencies are:
+Currently, this packages is based on numpy. For this reason, the basic package dependencies are:
 
 - Numpy
 - Scipy
 
 ## Installation
+
+```pip install pysid```
