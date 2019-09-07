@@ -1,11 +1,11 @@
 # pysid
 
 This is a python System Identification package, based on numpy and scipy, that
-provide some tools for parametric identification of causal linear time-invarient systems.
+provide some tools for parametric identification of causal linear time-invariant systems.
 
-## Supported methods 
+## Supported methods
 
-Here are the list ot the implemented methods
+Here are the list of the implemented methods
 - Least Squares
 - Instrumental Variables
 - Prediction Error method
@@ -18,9 +18,3 @@ Currently, this packages is based on numpy. For this reason the basic packages d
 - Scipy
 
 ## Installation
-
-
-
-    
-
-
