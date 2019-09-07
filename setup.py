@@ -9,7 +9,7 @@ with open("README.md") as fh:
     long_description = fh.read()
 #Set the setup file
 setuptools.setup(
-    name="pysidedumapurunga",
+    name="pysid",
     version="0.0.1",
     author="Eduardo Mapurunga and Emerson Boeira",
     author_email="edumapurunga@gmail.com",
