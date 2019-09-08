@@ -1,6 +1,14 @@
 #___init___.py Initialization for pysid toolbox
+"""
+System Identification Toolbox for Python
 
-#Author: @edumapurunga
-
+author: @edumapurunga
+"""
 #Name of the Package
 name = "pysid"
+#Imports
+from .autocorr import *
+from .croscorr import *
+from .ivmethod import *
+from .pemethod import *
+from .tseries import *
