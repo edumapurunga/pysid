@@ -7,8 +7,10 @@ author: @edumapurunga
 #Name of the Package
 name = "pysid"
 #Imports
-from .autocorr import *
-from .croscorr import *
-from .ivmethod import *
-from .pemethod import *
-from .tseries import *
+#from .autocorr import *
+#from .croscorr import *
+#from .ivmethod import *
+#from .pemethod import *
+#from .tseries import *
+from pysid.identification import *
+from pysid.correlation import * 
