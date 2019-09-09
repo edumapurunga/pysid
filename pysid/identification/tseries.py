@@ -16,8 +16,8 @@ from scipy.signal import lfilter, periodogram
 from scipy.optimize import leastsq, least_squares
 import numpy.fft as fft
 #Internal imports
-from . import checkin
-from . import ls
+from .pemethod import chckin
+from .pemethod import ls
 #%% functions
 __all__ = ['ar', 'arma', 'ma']
 #%% implementations
