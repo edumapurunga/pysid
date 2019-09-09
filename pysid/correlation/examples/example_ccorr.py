@@ -7,9 +7,10 @@ Created on Fri Sep  6 11:33:15 2019
 import numpy as np  # important package for scientific computing
 from scipy import signal  # signal processing library
 import matplotlib.pyplot as plt  # library to plot graphics
+import correlation.croscorr as corr
 
-from croscorr import arma_ccorr
-from croscorr import smpl_ccorr
+#from croscorr import arma_ccorr
+#from croscorr import smpl_ccorr
 
 #%% Example
 
@@ -20,11 +21,8 @@ e = np.random.normal(0, np.sqrt(sigma2e), Nn)
 #B = np.array([1])
 #A = np.array([1])
 
-B = np.array([1])
-A = np.array([1, -0.9])
-
-#D = np.array([1])
-#C = np.array([1, -0.8])
+A = np.array([1, -1.7, 0.72])
+B = np.array([1, -0.95])
 
 D = np.array([1])
 C = np.array([1])
@@ -42,18 +40,20 @@ maxlag = 15
 
 #%% Calculating theoretical cross covariance function
  
-ryw, tau = arma_ccorr(B, A, D, C, sigma2e, maxlag)
+ryw, tau = corr.arma_ccorr(B, A, D, C, sigma2e, maxlag)
 
 #%% Calculating sample-based cross covariance with np.cov()
 
-ryw2, tau2 = smpl_ccorr(y, w, maxlag)
+ryw2, tau2 = corr.smpl_ccorr(y, w, maxlag)
 
 #%% Graphics
 
 plt.figure()
-plt.rc('text', usetex=True)
 plt.stem(tau, ryw)
 plt.stem(tau2, ryw2, 'r--')
 plt.grid(True)
 plt.xlabel(r'$\tau$ (samples)')
+plt.ylabel(r'$r_{yy}(\tau)$')
+plt.legend(('Red = Theoretical','Blue = Sampled-based'))
+#plt.savefig('ex_ccorr.eps')
 plt.show()
