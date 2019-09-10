@@ -17,7 +17,7 @@ from scipy.signal import lfilter, periodogram
 from scipy.optimize import leastsq, least_squares
 import numpy.fft as fft
 #%% functions
-__all__ = ['fir', 'arx', 'armax', 'oe', 'bj']
+__all__ = ['fir', 'arx', 'armax', 'oe', 'bj', 'pem']
 #%% Implementation
 def fir(nb, nk, u, y):
     """
