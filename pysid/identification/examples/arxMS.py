@@ -1,10 +1,10 @@
 """
-    In this example we use the SysID library to estimate a MISO arx model
+    In this example we use the pysid library to estimate a MISO arx model
 """
 #Import Libraries
 from numpy.random import rand, randn #To generate the experiment
 from scipy.signal import lfilter     #To generate the data
-from sysid import arx                #To estimate an arx model
+from pysid import arx                #To estimate an arx model
 #True System
 #Number of inputs
 nu = 3
@@ -22,7 +22,7 @@ B2o = [0, 0.8, 0.3]
 #True parameter vector
 thetao = [-1.2, 0.36, 0.5, 0.1, 1, 0.5, 0.8, 0.3]
 #Generate the experiment
-#The true system is generates by the following relation: 
+#The true system is generates by the following relation:
 # S: y(t) = Go(q)*u(t) + Ho(q)*e(t),
 #with u(t) the input and e white noise.
 #Number of Samples

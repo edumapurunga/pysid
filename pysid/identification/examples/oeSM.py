@@ -1,11 +1,11 @@
 """
-    In this example we use the SysID library to estimate a SIMO oe model
+    In this example we use the pysid library to estimate a SIMO oe model
 """
 #Import Libraries
 from numpy import concatenate
 from numpy.random import random, randn #To generate the experiment
 from scipy.signal import lfilter     #To generate the data
-from sysid import oe                 #To estimate an arx model
+from pysid import oe                 #To estimate an arx model
 #True System
 #Number of inputs
 nu = 1
@@ -24,7 +24,7 @@ B2o = [0, 0.3,-0.2]
 #True parameter vector
 thetao = [-1.2, 0.36, -1.4, 0.49, 0.5, 0.1, 0.6, -0.2]
 #Generate the experiment
-#The true system is generates by the following relation: 
+#The true system is generates by the following relation:
 # S: y(t) = Go(q)*u(t) + Ho(q)*e(t),
 #with u(t) the input and e white noise.
 #Number of Samples

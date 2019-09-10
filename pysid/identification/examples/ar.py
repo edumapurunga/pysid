@@ -1,18 +1,18 @@
 """
-    In this example we use the SysID library to estimate an AR model
+    In this example we use the pysId library to estimate an AR model
 """
 #Import Libraries
 from numpy import convolve
 from numpy.random import randn       #To generate the experiment
 from scipy.signal import lfilter     #To generate the data
-from sysid import ar, burg           #To estimate an arx model
+from pysid import ar                 #To estimate an arx model
 #True System
 na = 4
 #with the following true parameters
 Ao = convolve(convolve([1, -0.5],[1, -0.7]), convolve([1, -0.8], [1, -0.9]))
 #True parameter vector
 #Generate the experiment
-#The true system is generates by the following relation: 
+#The true system is generates by the following relation:
 # S: Ao(q)y(t) = e(t),
 #with u(t) the input and e white noise.
 #Number of Samples
@@ -24,6 +24,6 @@ y = lfilter([1], Ao, e, axis=0)
 #Estimate the model using Yule-Walker method
 Ayw = ar(na, y)
 #Estimate the model using Burg method
-Aburg = burg(y, na)
-#Estimate the model using pem 
+Aburg = ar(na, y, 'burg')
+#Estimate the model using pem
 Apem = ar(na, y, 'pem')

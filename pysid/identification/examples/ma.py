@@ -1,5 +1,5 @@
 """
-    In this example we use the SysID library to estimate an ARMA model
+    In this example we use the pysid library to estimate a MA model
 """
 #Import Libraries
 from numpy.random import randn       #To generate the experiment
@@ -8,9 +8,9 @@ from sysid import ma                 #To estimate an arx model
 #True System
 nb = 1
 #with the following true parameters
-Bo = [1, 0.55, 0.15] 
+Bo = [1, 0.55, 0.15]
 #True parameter vector
-#The true system is generates by the following relation: 
+#The true system is generates by the following relation:
 # S: Ao(q)y(t) = Bo(q)e(t),
 #with u(t) the input and e white noise.
 #Number of Samples
@@ -23,5 +23,5 @@ y = lfilter(Bo, [1], e, axis=0)
 Bd = ma(nb, y)
 #Estimate the model using Vocariance Method
 Bvoc = ma(nb, y, 'vrm')
-#Estimate the model using pem 
+#Estimate the model using pem
 Bpem = ma(nb, y, 'pem')

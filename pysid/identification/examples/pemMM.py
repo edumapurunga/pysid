@@ -14,7 +14,7 @@ zeros, mean
 from numpy.linalg import norm
 from numpy.random import random, randn #To generate the experiment
 from scipy.signal import lfilter       #To generate the data
-from sysid import pem                  #To estimate an arx model
+from pysid import pem                  #To estimate an arx model
 #True System
 #Number of inputs
 nu = 2
@@ -34,7 +34,7 @@ Bo = array([[[0, 0.5, 0.1], [0, 0.3, -0.9]], [[0, 0.23, -0.11], [0, 0.43, -0.66]
 Co = array([[1, 0.8, 0.2], [1, 0.434, 0.202]], ndmin=1)
 Do = array([[1, -1.313, 0.344], [1, -1.22, 0.676]], ndmin=1)
 #Generate the experiment
-#The true system is generates by the following relation: 
+#The true system is generates by the following relation:
 # S: y(t) = Go(q)*u(t) + Ho(q)*e(t),
 #with u(t) the input and e white noise.
 #Number of Samples
@@ -84,8 +84,8 @@ Ah, Bh, Ch, Dh, Fh = pem(A, B, C, D, F, u, y)
     Now consider the situation where some parameters may be previously known.
     We can use this information in the prediction error method
 """
-#Define what parameters are known by using a mask, you must indicate that a 
-#parameter is known by sending a 1 in the right position, while 0 indicates 
+#Define what parameters are known by using a mask, you must indicate that a
+#parameter is known by sending a 1 in the right position, while 0 indicates
 #otherwise
 #mask: Consider that we know both b1 = 0.5 and a1 = 0.6
 #The mask should have the same size of A, B, C, D, F in the respective arrays

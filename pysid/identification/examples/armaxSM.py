@@ -1,11 +1,11 @@
 """
-    In this example we use the SysID library to estimate a SIMO armax model
+    In this example we use the pysid library to estimate a SIMO armax model
 """
 #Import Libraries
 from numpy import concatenate, dot, zeros, sqrt
 from numpy.random import rand, randn #To generate the experiment
 from scipy.signal import lfilter     #To generate the data
-from sysid import armax                #To estimate an arx model
+from pysid import armax                #To estimate an arx model
 #True System
 #Number of inputs
 nu = 1
@@ -28,7 +28,7 @@ C2o  = [1, 0.9,-0.2]
 #True parameter vector
 thetao = [-1.2, 0.36, 0.5, 0.4, 0.2, -0.3, 0.8, -0.1]
 #Generate the experiment
-#The true system is generates by the following relation: 
+#The true system is generates by the following relation:
 # S: y(t) = Go(q)*u(t) + Ho(q)*e(t),
 #with u(t) the input and e white noise.
 #Number of Samples
@@ -46,7 +46,7 @@ v2 = lfilter(C2o, [1], e[:,1:2], axis=0)
 #Simulate the true process
 for i in range(2, N):
     y1[i] = -dot(A1o[1:3] ,y1[i-2:i][::-1]) - dot(A12o[1:3],y2[i-2:i][::-1]) + dot(B1o[1:3], u[i-2:i, 0][::-1])
-    y2[i] = -dot(A21o[1:3], y1[i-2:i][::-1]) - dot(A2o[1:3], y2[i-2:i][::-1]) + dot(B2o[1:3], u[i-2:i, 0][::-1]) 
+    y2[i] = -dot(A21o[1:3], y1[i-2:i][::-1]) - dot(A2o[1:3], y2[i-2:i][::-1]) + dot(B2o[1:3], u[i-2:i, 0][::-1])
 y = concatenate((y1+v1, y2+v2), axis=1)
 #Estimate the model and get only the parameters
 A, B, C = armax(na, nb, nc, nk, u, y)
