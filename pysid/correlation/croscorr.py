@@ -13,17 +13,21 @@ def smpl_ccorr(y, w, maxlag):
     using the numpy.cov() function. The advantage os this function is that it's faster and more efficient
     that numpy.correlate().
     
-    Inputs: y, w, maxlag
-    Outputs: ryy, tau
-    
-    Inputs description:
-        y: observed signal
-        w: observed signal
-        maxlag: maximum lag that will be considered on the computation of the cross correlation (from -maxlag to +maxlag)
+    Parameters
+    ----------
+    y: numpy.ndarray
+        Observed signal.
+    w: numpy.ndarray
+        Observed signal.
+    maxlag: int
+        Maximum lag that will be considered on the computation of the cross correlation (from -maxlag to +maxlag).
             
-    Outputs description:
-        ryw: the cross correlation function, calculated based on the observations of y(t) and w(t);
-        tau: the lag interval considered. It has the same size as ryw."""
+    Returns
+    -------
+    ryw: numpy.ndarray
+        The cross correlation function, calculated based on the observations of y(t) and w(t).
+    tau: numpy.ndarray
+        The lag interval considered. It has the same size as ryw."""
         
     # calculating the size of tau
     N = 2 * maxlag + 1
@@ -55,22 +59,29 @@ def arma_ccorr(B, A, D, C, var, maxlag):
         A(q)y(t)=B(q)e(t), and
         C(q)w(t)=D(q)e(t), where
         A(q), B(q), C(q) and D(q) are defined as polinomials on q (instead of q^{-1})
-        e(t) is a white noise sequence, commom with both processes with variance: E[e(t)e(t)] = var
-    
-    Inputs: B, A D, C, var, maxlag
-    Outputs: ryw, tau
-    
-    Inputs description:
-        B = vector that contains the coefficients of B(q) on a "q basis"
-        A = vector that contains the coefficients of A(q) on a "q basis"
-        D = vector that contains the coefficients of D(q) on a "q basis"
-        C = vector that contains the coefficients of C(q) on a "q basis"
-        var = variance of e(t)
-        maxlag = maximum lag that will be considered on the computation of the cross correlation (from -maxlag to +maxlag)
+        e(t) is a white noise sequence, commom with both processes with variance: E[e(t)e(t)] = var.
+        
+    Parameters
+    ----------
+    B: numpy.ndarray
+        Vector that contains the coefficients of B(q) on a "q basis".
+    A: numpy.ndarray
+        Vector that contains the coefficients of A(q) on a "q basis".
+    D: numpy.ndarray
+        Vector that contains the coefficients of D(q) on a "q basis".
+    C: numpy.ndarray
+        Vector that contains the coefficients of C(q) on a "q basis".
+    var: float
+        Variance of e(t).
+    maxlag: int
+        Maximum lag that will be considered on the computation of the cross correlation (from -maxlag to +maxlag).
             
-    Outputs description:
-        ryw: the cross correlation function, calculated based on Soderstrom's algorithm
-        tau: the lag interval considered. It has the same size as ryw."""
+    Returns
+    -------
+    ryw: numpy.ndarray
+        The cross correlation function, calculated based on Soderstrom's algorithm.
+    tau: numpy.ndarray
+        The lag interval considered. It has the same size as ryw."""
         
     # transforms A(q) and B(q) to the same polynomial base
     # order of A(q)
