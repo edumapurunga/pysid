@@ -7,10 +7,7 @@ Created on Fri Sep  6 11:33:15 2019
 import numpy as np  # important package for scientific computing
 from scipy import signal  # signal processing library
 import matplotlib.pyplot as plt  # library to plot graphics
-import correlation.croscorr as corr
-
-#from croscorr import arma_ccorr
-#from croscorr import smpl_ccorr
+import pysid.correlation as corr # import pysid.correlation modules and functions
 
 #%% Example
 
