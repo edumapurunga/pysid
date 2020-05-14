@@ -13,17 +13,20 @@ def smpl_acorr(y, maxlag):
     """Function that calculates the sample-based autocorrelation of the signal y(t), using the numpy.cov() function.
     The advantage os this function is that it's faster and more efficient that numpy.correlate().
     
-    Inputs: y, maxlag
-    Outputs: ryy, tau
+    Parameters
+    ----------
+    y : numpy.ndarray
+        Observed signal.
+    maxlag: int
+        Maximum value of lag that will be considered on the autocorrelation function.
     
-    Inputs description:
-        y: observed signal
-        maxlag: maximum lag that will be considered on the computation of the autocorrelation (from -maxlag to +maxlag)
-            
-    Outputs description:
-        ryy: the autocorrelation function, calculated based on the observation of y(t);
-        tau: the lag interval considered. It has the same size as ryy."""
-    
+    Returns
+    -------
+    ryy: numpy.ndarray
+        The autocorrelation function, calculated based on the observation of y(t).
+    tau: numpy.ndarray
+        The lag interval considered. It has the same size as ryy."""    
+        
     # calculating the size of tau
     N = 2 * maxlag + 1
     # assembling tau with linspace
@@ -51,20 +54,25 @@ def arma_acorr(C, A, var, maxlag):
     """Function that calculates the theoretical autocorrelation function of an ARMA process:
         A(q)y(t)=C(q)e(t), where
         A(q) and C(q) are defined as polinomials on q (instead of q^{-1})
-        e(t) is a white noise sequence with variance: E[e(t)e(t)] = var
+        e(t) is a white noise sequence with variance: E[e(t)e(t)] = var.
     
-    Inputs: C, A, var, maxlag
-    Outputs: ryy, tau
+    Parameters
+    ----------
+    A: numpy.ndarray
+        Vector that contains the coefficients of A(q).
+    C: numpy.ndarray
+        Vector that contains the coefficients of C(q).
+    var: float
+        Variance of e(t).
+    maxlag: int
+        Maximum lag that will be considered on the computation of the autocorrelation (from -maxlag to +maxlag).
     
-    Inputs description:
-        A = vector that contains the coefficients of A(q)
-        C = vector that contains the coefficients of C(q)
-        var = variance of e(t)
-        maxlag = maximum lag that will be considered on the computation of the autocorrelation (from -maxlag to +maxlag)
-            
-    Outputs description:
-        ryy: the autocorrelation function, calculated based on Soderstrom's algorithm
-        tau: the lag interval considered. It has the same size as ryy."""
+    Returns
+    -------
+    ryy: numpy.ndarray
+        The autocorrelation function, calculated based on Soderstrom's algorithm.
+    tau: numpy.ndarray
+        The lag interval considered. It has the same size as ryy."""
     
     # order of A(q)
     n = A.shape[0] - 1
@@ -121,17 +129,21 @@ def coeff(A, D, maxlag):
     """Function that calculates the coefficients of the theoretical correlation, based on the A(q) and D(q) polynomials,
     from -maxlag to +maxlag.
     
-    Inputs: A, D, maxlag
-    Outputs: ryy, tau
-    
-    Inputs description:
-        A = vector that contains the coefficients of A(q)
-        D = vector that contains the coefficients of D(q)
-        maxlag: maximum lag that will be considered on the computation of the autocorrelation (from -maxlag to +maxlag)
-            
-    Outputs description:
-        ryy: the autocorrelation function, calculated based on Soderstrom's algorithm
-        tau: the lag interval considered. It has the same size as ryy."""
+    Parameters
+    ----------
+    A: numpy.ndarray
+        Vector that contains the coefficients of A(q).
+    D: numpy.ndarray
+        Vector that contains the coefficients of D(q).
+    maxlag: int
+        Maximum lag that will be considered on the computation of the autocorrelation (from -maxlag to +maxlag).
+        
+    Returns
+    -------
+    ryy: numpy.ndarray
+        The autocorrelation function, calculated based on Soderstrom's algorithm.
+    tau: numpy.ndarray
+        The lag interval considered. It has the same size as ryy."""
     
     # preallocating the correlation function vector
     ryy = np.zeros((maxlag + 1))
