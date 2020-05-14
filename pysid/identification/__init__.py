@@ -1,6 +1,7 @@
-#__init__.py for sysid
+#__init__.py for pysid
 
-#Load all the functions by default
+# Load all the functions by default
 from .ivmethod import *
 from .pemethod import *
 from .tseries import *
+from .accr import *
