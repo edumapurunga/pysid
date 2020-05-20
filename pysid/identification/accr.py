@@ -135,10 +135,10 @@ def crlbarma(A, C, sig):
     -------
     CRLB : TYPE
         DESCRIPTION.
-    
+
     References
     ----------
-    [1] 
+    [1]
 
     """
     # Verify max
