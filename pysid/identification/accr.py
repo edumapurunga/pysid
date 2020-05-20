@@ -64,30 +64,9 @@ def crlbss(F, C, R1, R2, R12, nt, Fis, Cis, R1is, R2is, R12is):
     p = shape(C)[0]
     # Find the Innovations Representation using the Kalman Filter
     P = solve_discrete_are(F.T, C.T, R1, R2, s=R12)
-    Q = C@P@C.T + R2
+    Q = C @ P @ C.T + R2
     S = inv(Q)
-    K = (F@P@C.T + R12)@S
-    # Q = C.dot(P.dot(C.T)) + R2
-    # K = (F.dot(P.dot(C.T)) + R12).dot(inv(Q))
-    # Derivatives of F, C, R1, and R2. As for now, only F depends on theta
-    # Fis = []
-    # Cis = []
-    # R1is = []
-    R12is = []
-    R2is = []
-    # Derivative of F
-    # for i in range(n):
-        # for j in range(n):
-            # if F[i, j] != 0:
-                # aux = zeros((n, n))
-                # aux[i, j] = 1
-                # Fis.append(aux)
-    # Derivatives of the other matrices
-    for i in range(nt):
-        # Cis.append(zeros((p, n)))
-        #R1is.append(zeros((n, n)))
-        R12is.append(zeros((n, p)))
-        R2is.append(zeros((p, p)))
+    K = (F @ P @ C.T + R12) @ S
     # Sensitivity Matrices
     Pis = []
     Qis = []
