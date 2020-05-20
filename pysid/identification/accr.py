@@ -30,12 +30,28 @@ def crlbss(F, C, R1, R2, R12, nt, Fis, Cis, R1is, R2is, R12is):
 
     Parameters
     ----------
-    F : numpy.ndarray 
+    F : numpy.ndarray
         Dynamic Matrix n x n matrix.
     C : numpy
         Output Matrix, p x n matrix.
-    R : numpy
-        Covariance Matrix of [v(k) e(k)].
+    R1 : numpy
+        Covariance Matrix of [v(k) ].
+    R12: numpy.ndarray
+        Cross Covariance of E[v(k) e(k)].
+    R2 : numpy.ndarray
+        Covariance of e(k)
+    nt : integer
+        Number of unknown Parameters
+    Fis: list
+        List containing the derivatives of F with repesct to the parameters
+    Cis: list
+        List containing the derivatives of C with repesct to the parameters
+    R1is: list
+        List containing the derivatives of R1 with repesct to the parameters
+    R12is: list
+        List containing the derivatives of R12 with repesct to the parameters
+    R2is: list
+        List containing the derivatives of R2 with repesct to the parameters
 
     Returns
     -------
