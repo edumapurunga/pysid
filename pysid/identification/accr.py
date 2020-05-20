@@ -102,7 +102,7 @@ def crlbss(F, C, R1, R2, R12, nt, Fis, Cis, R1is, R2is, R12is):
     # Covariance of the augmented systems
     covv = block([[R1, R12], [R12.T, R2]])
     # Solve the Lyapunov Equation for the augmented state space system
-    cP = solve_discrete_lyapunov(cF.T, cK.dot(covv.dot(cK.T)))
+    cP = solve_discrete_lyapunov(cF, cK.dot(covv.dot(cK.T)))
     # Get  E[psispi] as:
     PP = cC.dot(cP.dot(cC.T))
     # Compute Pbar and EpsiWpsi
