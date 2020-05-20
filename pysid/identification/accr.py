@@ -15,9 +15,9 @@ from .tseries import *
 #%% Define functions to call
 __all__ = ['crlbss', 'crlbarma']
 
-def crlbss(F, C, R1, R2, R12, nt, Fis, Cis, R1is):
+def crlbss(F, C, R1, R2, R12, nt, Fis, Cis, R1is, R2is, R12is):
     """
-    Compute the Cramer-Rao Lower bound matrix for a linear state space 
+    Compute the Cramer-Rao Lower bound matrix for a linear state space
     system of the form:
         x(k+1) = F x(k) + v(k)
         y(k)   = C x(k) + e(k)
