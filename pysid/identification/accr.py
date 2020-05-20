@@ -74,16 +74,12 @@ def crlbss(F, C, R1, R2, R12, nt, Fis, Cis, R1is, R2is, R12is):
     # Solve Discrete Lyapunov
     for i in range(nt):
         # Auxiliary
-        # aux = (R1is[i] - K.dot(R12is[i].T) - R12is[i].dot(K.T) + K.dot(R2is[i].dot(K.T))) + (Fis[i]-K.dot(Cis[i])).dot(P.dot((F-K.dot(C)).T)) + (F - K.dot(C)).dot(P.dot((Fis[i] - K.dot(Cis[i])).T))
         aux = (R1is[i] - K@R12is[i].T - R12is[i]@K.T + K@R2is[i]@K.T) + (Fis[i]-K@Cis[i])@P@(F-K@C).T + (F - K@C)@P@(Fis[i] - K@Cis[i]).T
         # Solve Discrete Lyapynov
-        # Pis.append(solve_discrete_lyapunov((F - K.dot(C)).T, aux))
-        Pis.append(solve_discrete_lyapunov((F - K@C).T, aux))
+        Pis.append(solve_discrete_lyapunov((F - K@C), aux))
         # Update Q
-        # Qis.append(Cis[i].dot(P.dot(C.T)) + C.dot(P.dot(Cis[i].T)) + C.dot(Pis[i].dot(C.T)) + R2is[i])
         Qis.append(Cis[i]@P@C.T + C@P@Cis[i].T + C@Pis[i]@C.T + R2is[i])
         # Update K
-        # Kis.append((Fis[i]-K.dot(Cis[i])).dot(P.dot(C.T.dot(iQ))) + (F - K.dot(C)).dot(Pis[i].dot(C.T.dot(iQ))) + R12is[i].dot(iQ) + (F - K.dot(C)).dot(P.dot(Cis[i].T.dot(iQ))) - K.dot(R2is[i].dot(iQ)))
         Kis.append((Fis[i]-K@Cis[i])@P@C.T@S + (F - K@C)@Pis[i]@C.T@S + R12is[i]@S + (F - K@C)@P@Cis[i].T@S - K@R2is[i]@S)
     # Form the augmented state space system
     Fb = vstack(tuple(Fis))
