@@ -113,15 +113,15 @@ def crlbss(F, C, R1, R2, R12, nt, Fis, Cis, R1is, R2is, R12is):
             # Pbar
             Pb[i, j] = 0.5*trace(S@Qis[i]@S@Qis[j])
             # Weighted version of Epsipsi
-            pwp[i, j] = trace(PP[j:j+1, :]@PP[:, i:i+1]@S)
-    # Compute the CRLB     
-    return pwp + Pb
+            pwp[i, j] = trace(PP[j, i]*S)
+    # Compute the CRLB
+    return inv(pwp + Pb)
 
 def crlbarma(A, C, sig):
     """
     Returns the Cramer-Rao Lower Bound for an ARMA process:
         y(t) = C(q)/A(q) e(t)
-    
+
     Parameters
     ----------
     A : TYPE
