@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 This module provides tools for accuracy analysis of parameter estimators.
-That includes some routines to 
-traditional information criteria, such as Akaike information criterion
-(AIC), BIC, Final predictor error (FPE) and other tools to determine
-model orders.
 
 author: @edumapurunga
 """
