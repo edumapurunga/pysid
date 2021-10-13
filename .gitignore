@@ -10,4 +10,4 @@ dist/
 pysid.egg-info/
 
 # Asv local files
-benchmarks/.asv
+benchmarks/.asv/
