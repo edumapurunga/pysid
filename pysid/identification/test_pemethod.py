@@ -63,10 +63,10 @@ def test_signals(test_polynomials):
 def test_polynomial_orders(na, nb, nc, nd, nf, nk):
     # Checks the consistency of na 
     assert isinstance(na, int)
-    
+
     # Checks the consistency of nb
     assert isinstance(nb, int)
-    
+
     # Checks the consistency of nc
     assert isinstance(nc, int)
 
