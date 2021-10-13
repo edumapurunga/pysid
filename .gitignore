@@ -4,7 +4,10 @@
 # Python Cache
 __pycache__
 
-#Building
+# Building
 build/
 dist/
 pysid.egg-info/
+
+# Asv local files
+benchmarks/.asv
