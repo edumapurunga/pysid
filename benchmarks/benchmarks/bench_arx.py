@@ -35,7 +35,7 @@ class Arx:
         # Generate the input 
         self.u = np.random.randn(N, 1)
         # Generate the output
-        self.y = sig.lfilter(B, A, u, axis=0) + sig.lfilter([1], A, 0.1*np.random.randn(N, 1), axis=0)
+        self.y = sig.lfilter(B, A, self.u, axis=0) + sig.lfilter([1], A, 0.1*np.random.randn(N, 1), axis=0)
         
         
     def time_arx_siso(self, na, nb, nk, N):
