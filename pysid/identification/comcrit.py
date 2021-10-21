@@ -75,28 +75,8 @@ def aicarx(na_max, nb_max, nk_max, u, y):
 
                 # Computes AIC cost function
                 J_aic[na-1,nb-1,nk-1] = N * log(J) + 2*p
-    
+
     # Finds the lowest cost estimate indices
     min_index = where(J_aic == amin(J_aic))
     A, B, J_aic = A_aic[min_index],B_aic[min_index],J_aic[min_index]
-    return [A,B,J_aic]
-    
-    #return [A_aic,B_aic,J_aic]
-
-# Testing example: to be removed
-Ao = [1, -1.2, 0.36]
-Bo = [0, 0.5, 0.1]
-N = 100
-u = -1 + 2*rand(N, 1)
-e = 0.01*randn(N, 1)
-y = lfilter(Bo, Ao, u, axis=0)
-
-# Setting max na, nb and nk orders
-na_max,nb_max,nk_max = 2,1,1
-A, B, J_aic = aicarx(na_max, nb_max, nk_max, u, y)
-
-print(f'A(q) = {A[0]}')
-print(f'B(q) = {B[0]}')
-print(f'J_AIC = {J_aic[0]:.2f}')
-
-# %%
+    return [A, B, J_aic]
