@@ -89,22 +89,3 @@ def save_data(data, filename="data.csv", delim=","):
         print("csv_data.py::save_data -- Successfully saved data as " + filename + ".")
     except:
         print("csv_data.py::save_data -- Error saving data.")
-
-#%%
-# CSV files example
-
-# Define system and the number of samples
-Ao = [1, -1.2, 0.36]
-Bo = [0, 0.5, 0.1]
-N = 50
-
-# Generates test data
-data = gen_data(Ao, Bo, N)
-
-# Saves generated data into 
-save_file = "save_test.csv"
-save_data(data, save_file)
-
-# Loads previoulsy saved data
-load_file = "load_test.csv"
-loaded_data = load_data(load_file)
