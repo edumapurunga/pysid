@@ -1,13 +1,10 @@
-# encoded utf-8
 """
 This module provides tools for model determination. That includes the
 traditional information criteria, such as Akaike information criterion
 (AIC), BIC, Final predictor error (FPE) and other tools to determine
 model orders.
-
-author: @edumapurunga
 """
-#%%
+#
 from numpy import dot, empty, log, amin, where
 from scipy.signal import lfilter
 from numpy.random import rand, randn
