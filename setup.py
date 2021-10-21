@@ -1,17 +1,13 @@
-#Setup file for packaging pysid
-
-#Author: @edumapurunga
-
-#%% Import Necessary libraries
+# Import Necessary libraries
 import setuptools
-#Read README contents
+# Read README contents
 with open("README.md") as fh:
     long_description = fh.read()
-#Set the setup file
+# Set the setup file
 setuptools.setup(
     name="pysid",
-    version="0.0.1.post2",
-    author="Eduardo Mapurunga and Emerson Boeira",
+    version="0.0.2.beta",
+    author="Eduardo Mapurunga",
     author_email="edumapurunga@gmail.com",
     description="System Identification tools for python",
     long_description=long_description,
