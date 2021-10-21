@@ -24,24 +24,24 @@ def aicarx(na_max, nb_max, nk_max, u, y):
     and the best fitting A(q) and B(q) polynomials for the ARX model: 
         A(q)y(t) = B(q)u(t) + e(t),
 
-	Parameters
-	----------
-	na_max : int
-		maximum value for the na parameter -- na = [1, 2, ..., na_max]
-	nb_max : int
-		maximum value for the na parameter -- nb = [0, 1, ..., nb_max]
-	nk_max : int
-		maximum value for the na parameter -- nk = [0, 1, ..., nk_max]
+    Parameters
+    ----------
+    na_max : int
+        maximum value for the na parameter -- na = [1, 2, ..., na_max]
+    nb_max : int
+        maximum value for the na parameter -- nb = [0, 1, ..., nb_max]
+    nk_max : int
+        maximum value for the na parameter -- nk = [0, 1, ..., nk_max]
     u : ndarray
         input data array
     y : ndarray
         output data array
-	Returns
-	-------
-	A : ndarray
-		Array containing the A(q) polynomial
-	B : ndarray
-		Array containing the B(q) polynomial
+    Returns
+    -------
+    A : ndarray
+        Array containing the A(q) polynomial
+    B : ndarray
+        Array containing the B(q) polynomial
     J_aic : int
         AIC cost function value using A(q) and B(q)
     """
