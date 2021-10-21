@@ -11,6 +11,8 @@ from numpy.random import rand, randn
 
 from pemethod import arx
 
+__all__ = ['aicarx']
+
 def aicarx(na_max, nb_max, nk_max, u, y):
     """
     author: @lima84
