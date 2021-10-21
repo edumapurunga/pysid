@@ -4,7 +4,7 @@
     Data handling functions using numpy.
 """
 
-#%%
+
 from numpy import loadtxt, savetxt, concatenate
 from numpy.random import rand, randn
 from scipy.signal import lfilter
@@ -12,22 +12,22 @@ from scipy.signal import lfilter
 def gen_data(Ao, Bo, N):
     """
     author: @lima84
-	Generates a set of input and output data following:
+    Generates a set of input and output data following:
         y(t) = Go(q)*u(t) + Ho(q)*e(t),
     where G(q) = Bo(q)/Ao(q) and H(q) = 1/Ao(q).
-	
-	Parameters
-	----------
-	Ao : array_like
-		Ao(q) polynomial coefficients.
-	Bo : array_like
-		Bo(q) polynomial coefficients.
-	N : int
-		Number of samples for the dataset.
-	Returns
-	-------
-	data : ndarray
-		Dataset array in the form of [input, output].
+
+    Parameters
+    ----------
+    Ao : array_like
+    Ao(q) polynomial coefficients.
+    Bo : array_like
+    Bo(q) polynomial coefficients.
+    N : int
+    Number of samples for the dataset.
+    Returns
+    -------
+    data : ndarray
+    Dataset array in the form of [input, output].
     """
     # Replicates the following experiment:
     # y(t) = Go(q)*u(t) + Ho(q)*e(t),
@@ -45,18 +45,18 @@ def gen_data(Ao, Bo, N):
 def load_data(filename, delim=","):
     """
     author: @lima84
-	Loads a dataset into a variable. Default format is .csv
-	
-	Parameters
-	----------
-	filename : string
-		Name of the file (with extension) from which the dataset is loaded.
-	delim : string, optional
+    Loads a dataset into a variable. Default format is .csv
+    
+    Parameters
+    ----------
+    filename : string
+    Name of the file (with extension) from which the dataset is loaded.
+    delim : string, optional
         Column delimiter. Default is "," for .csv files.
-	Returns
-	-------
-	data : ndarray
-		Loaded dataset.
+    Returns
+    -------
+    data : ndarray
+    Loaded dataset.
     """
     try:
         data = loadtxt(filename, dtype=float, delimiter=delim)
@@ -64,22 +64,22 @@ def load_data(filename, delim=","):
         return data
     except:
         print("csv_data.py::load_data -- Error loading data.")
-    
+
 def save_data(data, filename="data.csv", delim=","):
     """
     author: @lima84
-	Saves a dataset into a file. Default format is .csv
-	
-	Parameters
-	----------
+    Saves a dataset into a file. Default format is .csv
+
+    Parameters
+    ----------
     data : ndarray
         Dataset to be saved in the file.
-	filename : string, optional
-		Name of the file (with extension) where the dataset shall be saved. Default is "data.csv"
-	delim : string, optional
+    filename : string, optional
+    Name of the file (with extension) where the dataset shall be saved. Default is "data.csv"
+    delim : string, optional
         Column delimiter. Default is "," for .csv files.
-	Returns
-	-------
+    Returns
+    -------
 
     """
     try:
