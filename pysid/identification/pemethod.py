@@ -5,8 +5,10 @@ Module for Prediction error methods
 """
 
 # Imports
+from numpy import arange, asarray, array, append, asscalar, copy, count_nonzero, ones,\
 delete, dot, empty, sum, size, amax, matrix, concatenate, shape, zeros, kron,\
 eye, reshape, convolve, sqrt, where, nonzero, correlate, equal, ndarray, pi, \
+absolute, exp, log, real, issubdtype, integer
 from scipy.linalg import qr, solve, toeplitz
 from numpy.linalg import matrix_rank
 from scipy.signal import lfilter, periodogram
