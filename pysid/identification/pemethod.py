@@ -473,16 +473,16 @@ def chckin(na, nb, nc, nd, nf, nk, u, y):
     if isinstance(nb, (int, list)):
         nb = array(nb, ndmin=2)
     if isinstance(nc, (int, list)):
-        nc = array(nc, ndmin=1)
+        nc = array(nc, ndmin=2)
     if isinstance(nd, (int, list)):
-        nd = array(nd, ndmin=1)
+        nd = array(nd, ndmin=2)
     if isinstance(nf, (int, list)):
         nf = array(nf, ndmin=2)
     if isinstance(nk, (int, list)):
         nk = array(nk, ndmin=2)
-    if isinstance(nb, (int, float, list)):
+    if isinstance(u, (int, float, list, tuple)):
         u = array(u, ndmin=2)
-    if isinstance(nb, (int, float, list)):
+    if isinstance(y, (int, float, list, tuple)):
         y = array(y, ndmin=2)
     # Check the shapes
     Ny, ny = shape(y)
