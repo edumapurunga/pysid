@@ -1,24 +1,22 @@
-#This modules provides prediction error methods for discrete-time linear
-#models
+# This modules provides prediction error methods for discrete-time linear
+# models
 """
 Module for Prediction error methods
-
-@author: edumapurunga
 """
 
-#%% Imports
-from numpy import arange, array, append, asscalar, copy, count_nonzero, ones,\
+# Imports
 delete, dot, empty, sum, size, amax, matrix, concatenate, shape, zeros, kron,\
 eye, reshape, convolve, sqrt, where, nonzero, correlate, equal, ndarray, pi, \
-absolute, exp, log, real
 from scipy.linalg import qr, solve, toeplitz
 from numpy.linalg import matrix_rank
 from scipy.signal import lfilter, periodogram
 from scipy.optimize import leastsq, least_squares
 import numpy.fft as fft
-#%% functions
+
+# functions
 __all__ = ['fir', 'arx', 'armax', 'oe', 'bj', 'pem']
-#%% Implementation
+
+# Implementation
 def fir(nb, nk, u, y):
     """
     This function estimates a FIR model based on the input-ouput data provided
@@ -33,9 +31,9 @@ def fir(nb, nk, u, y):
     Outputs:
         B - vector containing the polynomial B(q)
     """
-    #Transform everything in array for use with numpy
+    # Transform everything in array for use with numpy
     _, nb, _, _, _, nk, u, y = chckin([], nb, [], [], [], nk, u, y)
-    #Input handling
+    # Input handling
     Ny, ny = shape(y)
     Nu, nu = shape(u)
     nbk = nb + nk
@@ -45,19 +43,18 @@ def fir(nb, nk, u, y):
     #d = da + db
     phiu = zeros(((Nu-L)*ny, db))
     k = 0;
-    #Input regressors
+    # Input regressors
     for i in range(0, ny):
         for j in range(0, nu):
             if (nb[i, j] > -1):
-                #phiu[:, k:k+nb[i, j]+1] = kron(toeplitz(u[L-nk[i, j]:-nk[i, j], j], u[L-nk[i, j]-nb[i, j]:L-nk[i, j]+1, j][::-1]), Iny[:, i:i+1]) #Should be Iny[:,j:j+1]
                 phiu[:, k:k+nb[i, j]+1] = kron(toeplitz(u[L-nk[i, j]:Nu-nk[i, j], j], u[L-nk[i, j]-nb[i, j]:L-nk[i, j]+1, j][::-1]), Iny[:, i:i+1])
                 k += nb[i, j] + 1
-    #Solve the Ls problem
+    # Solve the Ls problem
     phi = copy(phiu)
     y = reshape(y[L:Ny, :], ((Ny-L)*ny, 1))
     theta = qrsol(phi, y)[0]
     b = theta[0:]
-    #Output
+    # Output
     B = empty((ny, nu), dtype='object')
     k = 0
     for i in range(0, ny):
@@ -82,14 +79,14 @@ def arx(na, nb, nk, u, y, opt=0):
         A - vector containing the polynomial A(q)
         B - vector containing the polynomial B(q)
     """
-    #Transform everything in array for use with numpy
+    # Transform everything in array for use with numpy
     na, nb, _, _, _, nk, u, y = chckin(na, nb, [], [], [], nk, u, y)
-    #Input handling
+    # Input handling
     Ny, ny = shape(y)
     Nu, nu = shape(u)
     nbk = nb + nk
     L = amax([amax(na), amax(nbk)])
-    #MIMO case
+    # MIMO case
     A = empty((ny, ny), dtype='object')
     B = empty((ny, nu), dtype='object')
     Iny = eye(ny)
@@ -100,26 +97,26 @@ def arx(na, nb, nk, u, y, opt=0):
     phiu = zeros(((Nu-L)*ny, db))
     ka = 0
     kb = 0
-    #Output regressors and Input Regressors
+    # Output regressors and Input Regressors
     for i in range(0, ny):
-        #Input
+        # Input
         for j in range(0, nu):
             if (nb[i, j] > -1):
                 #phiu[:, kb:kb+nb[i, j]+1] = kron(toeplitz(u[L-nk[i, j]:-nk[i, j], j], u[L-nk[i, j]-nb[i, j]:L-nk[i, j]+1, j][::-1]), Iny[:, i:i+1]) #Should be Iny[:,j:j+1]
                 phiu[:, kb:kb+nb[i, j]+1] = kron(toeplitz(u[L-nk[i, j]:Nu-nk[i, j], j], u[L-nk[i, j]-nb[i, j]:L-nk[i, j]+1, j][::-1]), Iny[:, i:i+1])
                 kb += nb[i, j] + 1
-        #Output
+        # Output
         for j in range(0, ny):
             if (na[i, j] > 0):
                 phiy[:, ka:ka+na[i,j]] = kron(-toeplitz(y[L-1:-1, j], y[L-na[i, j]:L, j][::-1]),Iny[:, i:i+1])
                 ka += na[i,j]
-    #Solve the Ls problem
+    # Solve the Ls problem
     phi = concatenate((phiy, phiu), axis=1)
     y = reshape(y[L:Ny, :], ((Ny-L)*ny, 1))
     theta = qrsol(phi, y)[0]
     a = theta[0:da]
     b = theta[da:da+db+1]
-    #Prepare the results
+    # Prepare the results
     ka = 0
     kb = 0
     for i in range(0, ny):
@@ -152,12 +149,12 @@ def armax(na, nb, nc, nk, u, y):
         B - vector containing the polynomial B(q)
         C - vector containing the polynomial C(q)
     """
-    #Transform everything into array
+    # Transform everything into array
     na, nb, nc, _, _, nk, u, y = chckin(na, nb, nc, [], [], nk, u, y)
     #Input Handling
     Nu, nu = shape(u)
     Ny, ny = shape(y)
-    #Define the prediction error
+    # Define the prediction error
     def pe(theta, na, nb, nc, nk, u, y):
         Ny, ny = shape(y)
         Nu, nu = shape(u)
@@ -177,7 +174,7 @@ def armax(na, nb, nc, nk, u, y):
             e -= lfilter(a, c, -y[:,i], axis=0)
             k = k + na[i]
         return e
-    #Initial Guess
+    # Initial Guess
     A = empty((ny, ny), dtype=object)
     B = empty((ny, nu), dtype=object)
     C = empty((ny,), dtype = object)
@@ -185,27 +182,27 @@ def armax(na, nb, nc, nk, u, y):
         A_ = []
         B_ = []
         E = copy(y[:,i:i+1])
-        #Influence of the inputs
+        # Influence of the inputs
         for j in range(0, nu):
             a, b = ls(na[i, i], nb[i,j], nk[i,j], u[:,j:j+1], y[:,i:i+1])
             #A_ = append(A_, a)
             B_ = append(B_, b)
             E -= lfilter(append(zeros((1, nk[i,j])), b), append([1], a), u[:, j:j+1], axis=0) #u[:,i:i+1]
         A_ = append(A_, a)
-        #Influence of other outputs
+        # Influence of other outputs
         for j in range(0, ny):
             if j != i:
                 a, b = ls(na[i, i], na[i, j]-1, 1, y[:,j:j+1], y[:,i:i+1])
                 A_ = append(A_, b)
                 E -= lfilter(append([0], b), append([1], a), y[:,j:j+1], axis=0)
-        #ARMA model
+        # ARMA model
         _, c = arma(0, nc, E)
-        #Estimate the white noise
+        # Estimate the white noise
         c = c[1:]
         #c = [0.8, -0.1]
         B_ = append(B_, c)
         thetai = append(A_, B_)
-        #Solve the minimization problem
+        # Solve the minimization problem
         tar = y[0:Ny,i:i+1]
         tarna = na[i, i].reshape((1,))
         index = arange(ny)
@@ -244,12 +241,12 @@ def oe(nb, nf, nk, u, y):
         B - vector containing the polynomial B(q)
         F - vector containing the polynomial F(q)
     """
-    #Transform everything into array
+    # Transform everything into array
     _, nb, _, _, nf, nk, u, y = chckin([], nb, [], [], nf, nk, u, y)
-    #Input Handling
+    # Input Handling
     Nu, nu = shape(u)
     Ny, ny = shape(y)
-    #Define the prediction error
+    # Define the prediction error
     def pe(theta, nf, nb, nk, u, y):
         Nu, nu = shape(u)
         F = theta[0:sum(nf)]
@@ -269,7 +266,7 @@ def oe(nb, nf, nk, u, y):
                 #e -= lfilter(b, f, u[:,i], axis=0)
                 #TODO verify the strange lfilter behavior here too
         return e
-    #Initialization
+    # Initialization
     B = empty((ny, nu), dtype=object)
     F = empty((ny, nu), dtype=object)
     for j in range(0, ny):
@@ -286,9 +283,9 @@ def oe(nb, nf, nk, u, y):
                 b = [0]
             yn -= lfilter(b, a, u[:,i:i+1], axis=0)
         thetai = append(A, B_)
-        #Solve the minimization problem
+        # Solve the minimization problem
         sol = least_squares(pe, thetai, args=(nf[j], nb[j], nk[j], u.reshape((Nu, nu)), y[:,j]))
-        #Output
+        # Output
         theta = sol.x
         kf = 0
         kb = 0
@@ -322,12 +319,12 @@ def bj(nb, nc, nd, nf, nk, u, y):
         F - vector containing the polynomial F(q)
     """
     _, nb, nc, nd, nf, nk, u, y = chckin([], nb, nc, nd, nf, nk, u, y)
-    #Input Handling
+    # Input Handling
     Nu, nu = shape(u)
     Ny, ny = shape(y)
-    #Number of parameters do estimate
+    # Number of parameters do estimate
     #dp = nf + nb + nc + nd + 1
-    #Define the prediction error
+    # Define the prediction error
     def pe(theta, nf, nb, nc, nd, nk, u, y):
         Nu, nu = shape(u)
         F = theta[0:sum(nf)]
@@ -348,12 +345,12 @@ def bj(nb, nc, nd, nf, nk, u, y):
             fc = convolve(f, c)
             e -= lfilter(db, fc, u[0:,i], axis=0)
         return e
-    #Initial Guess
+    # Initial Guess
     B = empty((ny, nu), dtype=object)
     C = empty((ny, ), dtype=object)
     D = empty((ny, ), dtype=object)
     F = empty((ny, nu), dtype=object)
-    #TODO: Verify a way to compute an ARMA process
+    # TODO: Verify a way to compute an ARMA process
     for j in range(0, ny):
         thetaf = []
         thetab = []
@@ -374,14 +371,14 @@ def bj(nb, nc, nd, nf, nk, u, y):
         thetai = append(thetaf, thetab)
         ci = min(j, nu-1)
         d, c = ls(nd[j], nc[j]-1, 1, u[:, ci:ci+1], yn)
-        #Verify Empty Arrays
+        # Verify Empty Arrays
         if nc[j] == 0:
             thetai = append(thetai, d)
         elif nd[j] == 0:
             thetai = append(thetai, c)
         else:
             thetai = append(thetai, (c, d))
-        #Solve the minimization problem
+        # Solve the minimization problem
         sol = least_squares(pe, thetai, args=(nf[j], nb[j], nc[j], nd[j], nk[j], u.reshape(Nu, nu), y[:,j]))
         theta = sol.x
         #B[j] = append(zeros((1, nk[j])), theta[nf[j]:nf[j]+nb[j]+1])
@@ -409,7 +406,7 @@ def ls(na, nb, nk, u, y):
     :param nk: input signal delay;
     :return: coefficients of A and B in this order;
     '''
-    #Asking for nothing return
+    # Asking for nothing return
     if na == 0 and nb == -1:
         return [[], []]
     # Number of samples
@@ -462,13 +459,13 @@ def chckin(na, nb, nc, nd, nf, nk, u, y):
     """
     Function used to handle input argument and throw errors
     """
-    #Check if is at least a list or array
+    # Check if is at least a list or array
     if not isinstance(na, (int, list, ndarray)) or not isinstance(nb, (int, list, ndarray)) or\
        not isinstance(nc, (int, list, ndarray)) or not isinstance(nd, (int, list, ndarray)) or\
        not isinstance(nf, (int, list, ndarray)) or not isinstance(nk, (int, list, ndarray)) or\
        not isinstance(u, (int, list, ndarray)) or not isinstance(y, (int, list, ndarray)):
         raise Exception('Input arguments must be either list or array type')
-    #Verify if the arguments are lists
+    # Verify if the arguments are lists and transform them in 2D arrays
     if isinstance(na, (int, list)):
         na = array(na, ndmin=2)
     if isinstance(nb, (int, list)):
@@ -485,7 +482,7 @@ def chckin(na, nb, nc, nd, nf, nk, u, y):
         u = array(u, ndmin=2)
     if isinstance(nb, (int, float, list)):
         y = array(y, ndmin=2)
-    #Check the shapes
+    # Check the shapes
     Ny, ny = shape(y)
     Nu, nu = shape(u)
     ra, ca = shape(na)
@@ -495,12 +492,12 @@ def chckin(na, nb, nc, nd, nf, nk, u, y):
     rf, cf = shape(nf)
     rk, ck = shape(nk)
     L = int(amax([amax(na, initial=0), amax(nb + nk, initial=0), amax(nc, initial=0), amax(nd, initial=0), amax(nf, initial=0)]))
-    #Different number of Data
+    # Different number of Data
     if Ny != Nu:
         raise Exception('Input and Output must be the same number of data samples')
     if Ny < L:
         raise Exception('Not enough data for model identification')
-    #Classify Into the structures: Initial Variables
+    # Classify Into the structures: Initial Variables
     #isAR = True
     #isARX = True
     #isARMA = True
@@ -508,7 +505,7 @@ def chckin(na, nb, nc, nd, nf, nk, u, y):
     #isBB = True
     #isBJ = True
     #isFIR = True
-    #Verify the orders' shapes
+    # Verify the orders' shapes
     if (size(na) != 0) and (ra != ca or ra != ny):
         raise Exception('na must have shape (ny x ny)')
     if (size(nb) != 0) and (rb != ny or cb != nu):
