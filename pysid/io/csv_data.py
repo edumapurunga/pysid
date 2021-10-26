@@ -44,7 +44,7 @@ def gen_data(Ao, Bo, N):
     data = concatenate([u,y], axis=1)
     return data
 
-def load_data(filename, delim=","):
+def load_data(filename, delim=",", skip_rows=1):
     """
     author: @lima84
     Loads a dataset into a variable. Default format is .csv
@@ -55,19 +55,21 @@ def load_data(filename, delim=","):
     Name of the file (with extension) from which the dataset is loaded.
     delim : string, optional
         Column delimiter. Default is "," for .csv files.
+    skip_rows : int, optional
+        Number of skipped rows. Default is 1, for the file header.
     Returns
     -------
     data : ndarray
     Loaded dataset.
     """
     try:
-        data = loadtxt(filename, dtype=float, delimiter=delim)
+        data = loadtxt(filename, dtype=float, delimiter=delim, skiprows=skip_rows)
         print("csv_data.py::load_data -- Successfully loaded " + filename + ".")
         return data
     except:
         print("csv_data.py::load_data -- Error loading data.")
 
-def save_data(data, filename="data.csv", delim=","):
+def save_data(data, filename="data.csv", delim=",", hdr="Input, Output"):
     """
     author: @lima84
     Saves a dataset into a file. Default format is .csv
@@ -77,15 +79,17 @@ def save_data(data, filename="data.csv", delim=","):
     data : ndarray
         Dataset to be saved in the file.
     filename : string, optional
-    Name of the file (with extension) where the dataset shall be saved. Default is "data.csv"
+        Name of the file (with extension) where the dataset shall be saved. Default is "data.csv"
     delim : string, optional
         Column delimiter. Default is "," for .csv files.
+    hdr : str, optional
+        File header for column labelling. Default is "Input, Output"
     Returns
     -------
 
     """
     try:
-        savetxt(filename, data, delimiter=delim)
+        savetxt(filename, data, delimiter=delim, header=hdr)
         print("csv_data.py::save_data -- Successfully saved data as " + filename + ".")
     except:
         print("csv_data.py::save_data -- Error saving data.")
