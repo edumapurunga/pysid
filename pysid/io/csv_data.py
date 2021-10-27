@@ -89,7 +89,7 @@ def save_data(data, filename="data.csv", delim=",", hdr="Input, Output"):
 
     """
     try:
-        savetxt(filename, data, delimiter=delim, header=hdr)
+        savetxt(filename, data, delimiter=delim, header=hdr, comments='')
         print("csv_data.py::save_data -- Successfully saved data as " + filename + ".")
     except:
         print("csv_data.py::save_data -- Error saving data.")
