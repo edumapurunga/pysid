@@ -7,7 +7,6 @@ model orders.
 #
 from numpy import dot, empty, log, amin, where
 from scipy.signal import lfilter
-from numpy.random import rand, randn
 
 from .pemethod import arx
 
