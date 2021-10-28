@@ -12,7 +12,18 @@ from .pemethod import arx
 
 __all__ = ['aicarx']
 
-def aicarx(na_max, nb_max, nk_max, u, y):
+def aiccrit(J, N, p):
+    """Retun the AIC criterion"""
+    return N*log(J) + 2*p
+
+def aicncrit(J, N, p):
+    """Return the normalized AIC criterion"""
+    return log(J) + 2*p/N
+
+def aicccrit(J, N, p):
+    """Return the corrected AIC criterion"""
+    return N*log(J) + 2*p + 2*p*(p + 1)/(N - p - 1)
+
     """
     author: @lima84
 
