@@ -62,6 +62,8 @@ def aicarx(na_max, nb_max, nk_max, u, y, criterion='aicn'):
     B_aic = empty((na_max, nb_max + 1, nk_max + 1), dtype='object')
     J_aic = empty((na_max, nb_max + 1, nk_max + 1), dtype='object')
 
+    criteria = {'aic': aiccrit, 'aicn': aicncrit, 'aicc': aicccrit}
+    crit = criteria.get(criterion)
 
     for na in range(1,na_max+1):
         for nb in range(0,nb_max+1):
