@@ -24,6 +24,7 @@ def aicccrit(J, N, p):
     """Return the corrected AIC criterion"""
     return N*log(J) + 2*p + 2*p*(p + 1)/(N - p - 1)
 
+def aicarx(na_max, nb_max, nk_max, u, y, criterion='aicn'):
     """
     author: @lima84
 
@@ -45,6 +46,8 @@ def aicccrit(J, N, p):
         input data array
     y : ndarray
         output data array
+    criterion: string (optional)
+        critrion to be evaluated.
     Returns
     -------
     A : ndarray
