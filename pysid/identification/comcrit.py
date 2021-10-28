@@ -79,7 +79,7 @@ def aicarx(na_max, nb_max, nk_max, u, y, criterion='aicn'):
                 e = lfilter(A, [1], y, axis=0) - lfilter(B, [1], u, axis=0)
 
                 N = len(e)
-                p = len(A) + len(B)
+                p = na + nb + 1
 
                 # Computes the cost function
                 J = (1/N) * dot(e.T, e)[0][0]
