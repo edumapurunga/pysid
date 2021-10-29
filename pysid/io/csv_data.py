@@ -8,6 +8,8 @@
 from numpy import loadtxt, savetxt, concatenate
 from numpy.random import rand, randn
 from scipy.signal import lfilter
+import errno
+import os
 
 __all__ = ['load_data', 'save_data', 'gen_data']
 
