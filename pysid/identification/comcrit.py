@@ -8,7 +8,7 @@ model orders.
 from numpy import dot, empty, log, amin, where
 from scipy.signal import lfilter
 
-from .pemethod import arx
+from .pemethod import arx, chckin
 
 __all__ = ['aicarx']
 
