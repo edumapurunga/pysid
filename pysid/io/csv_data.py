@@ -60,14 +60,14 @@ def load_data(filename, delim=",", skip_rows=1):
     Returns
     -------
     data : ndarray
-    Loaded dataset.
+        Loaded dataset.
     """
     try:
         data = loadtxt(filename, dtype=float, delimiter=delim, skiprows=skip_rows)
         print("csv_data.py::load_data -- Successfully loaded " + filename + ".")
         return data
-    except:
-        print("csv_data.py::load_data -- Error loading data.")
+    except IOError:
+        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), filename) from None
 
 def save_data(data, filename="data.csv", delim=",", hdr="Input, Output"):
     """
