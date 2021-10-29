@@ -486,9 +486,9 @@ def chckin(na, nb, nc, nd, nf, nk, u, y):
         y = array(y, ndmin=2)
     # Check dimension
     if len(u.shape) < 2:
-        u.reshape(-1, 1)
+        u = expand_dims(u, axis=1)
     if len(y.shape) < 2:
-        y.reshape(-1, 1)
+        y = expand_dims(y, axis=1)
     # Check the shapes
     Ny, ny = shape(y)
     Nu, nu = shape(u)
