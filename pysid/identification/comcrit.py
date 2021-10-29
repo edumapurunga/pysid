@@ -7,13 +7,24 @@ model orders.
 #
 from numpy import dot, empty, log, amin, where
 from scipy.signal import lfilter
-from numpy.random import rand, randn
 
 from .pemethod import arx
 
 __all__ = ['aicarx']
 
-def aicarx(na_max, nb_max, nk_max, u, y):
+def aiccrit(J, N, p):
+    """Retun the AIC criterion"""
+    return N*log(J) + 2*p
+
+def aicncrit(J, N, p):
+    """Return the normalized AIC criterion"""
+    return log(J) + 2*p/N
+
+def aicccrit(J, N, p):
+    """Return the corrected AIC criterion"""
+    return N*log(J) + 2*p + 2*p*(p + 1)/(N - p - 1)
+
+def aicarx(na_max, nb_max, nk_max, u, y, criterion='aicn'):
     """
     author: @lima84
 
@@ -35,6 +46,8 @@ def aicarx(na_max, nb_max, nk_max, u, y):
         input data array
     y : ndarray
         output data array
+    criterion: string (optional)
+        critrion to be evaluated.
     Returns
     -------
     A : ndarray
@@ -44,16 +57,19 @@ def aicarx(na_max, nb_max, nk_max, u, y):
     J_aic : int
         AIC cost function value using A(q) and B(q)
     """
-    
-    A_aic = empty((na_max,nb_max,nk_max), dtype='object')
-    B_aic = empty((na_max,nb_max,nk_max), dtype='object')
-    J_aic = empty((na_max,nb_max,nk_max), dtype='object')
+
+    A_aic = empty((na_max, nb_max + 1, nk_max + 1), dtype='object')
+    B_aic = empty((na_max, nb_max + 1, nk_max + 1), dtype='object')
+    J_aic = empty((na_max, nb_max + 1, nk_max + 1), dtype='object')
+
+    criteria = {'aic': aiccrit, 'aicn': aicncrit, 'aicc': aicccrit}
+    crit = criteria.get(criterion)
 
     for na in range(1,na_max+1):
         for nb in range(0,nb_max+1):
             for nk in range(0,nk_max+1):
                 # Computes ARX polynomials for current (na, nb, nk)
-                A,B = arx(na, nb, nk, u, y)
+                A, B = arx(na, nb, nk, u, y)
 
                 # Array-list magic for lfilter 
                 A = A.tolist()[0][0]
@@ -63,19 +79,20 @@ def aicarx(na_max, nb_max, nk_max, u, y):
                 e = lfilter(A, [1], y, axis=0) - lfilter(B, [1], u, axis=0)
 
                 N = len(e)
-                p = len(A) + len(B)
+                p = na + nb + 1
 
                 # Computes the cost function
-                J = (1/N) * dot(e.T,e)[0][0]
+                J = (1/N) * dot(e.T, e)[0][0]
 
                 # Add current polynomials to their respective matrix
-                A_aic[na-1,nb-1,nk-1] = A
-                B_aic[na-1,nb-1,nk-1] = B
+                A_aic[na - 1, nb, nk] = A
+                B_aic[na - 1, nb, nk] = B
 
                 # Computes AIC cost function
-                J_aic[na-1,nb-1,nk-1] = N * log(J) + 2*p
+                J_aic[na - 1, nb, nk] = crit(J, N, p)
 
     # Finds the lowest cost estimate indices
     min_index = where(J_aic == amin(J_aic))
-    A, B, J_aic = A_aic[min_index],B_aic[min_index],J_aic[min_index]
+
+    A, B, J_aic = A_aic[min_index], B_aic[min_index], J_aic[min_index]
     return [A, B, J_aic]

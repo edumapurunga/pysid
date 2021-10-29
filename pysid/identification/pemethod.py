@@ -466,7 +466,7 @@ def chckin(na, nb, nc, nd, nf, nk, u, y):
        not isinstance(nc, (int, list, ndarray)) or not isinstance(nd, (int, list, ndarray)) or\
        not isinstance(nf, (int, list, ndarray)) or not isinstance(nk, (int, list, ndarray)) or\
        not isinstance(u, (int, list, ndarray)) or not isinstance(y, (int, list, ndarray)):
-        raise Exception('Input arguments must be either list or array type')
+        raise Exception('Input arguments must be either list or numpy.ndarray type')
     # Verify if the arguments are lists and transform them in 2D arrays
     if isinstance(na, (int, list)):
         na = array(na, ndmin=2)
@@ -484,6 +484,11 @@ def chckin(na, nb, nc, nd, nf, nk, u, y):
         u = array(u, ndmin=2)
     if isinstance(y, (int, float, list, tuple)):
         y = array(y, ndmin=2)
+    # Check dimension
+    if len(u.shape) < 2:
+        u.reshape(-1, 1)
+    if len(y.shape) < 2:
+        y.reshape(-1, 1)
     # Check the shapes
     Ny, ny = shape(y)
     Nu, nu = shape(u)
