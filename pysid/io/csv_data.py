@@ -66,9 +66,8 @@ def load_data(filename, delim=",", skip_rows=1):
         data = loadtxt(filename, dtype=float, delimiter=delim, skiprows=skip_rows)
         print("csv_data.py::load_data -- Successfully loaded " + filename + ".")
         return data
-    except:
-        print("csv_data.py::load_data -- Error loading data.")
-        raise OSError("File not found.")
+    except IOError:
+        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), filename) from None
 
 def save_data(data, filename="data.csv", delim=",", hdr="Input, Output"):
     """
