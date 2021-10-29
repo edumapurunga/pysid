@@ -57,6 +57,11 @@ def aicarx(na_max, nb_max, nk_max, u, y, criterion='aicn'):
     J_aic : int
         AIC cost function value using A(q) and B(q)
     """
+    # Check input arguments
+    _, _, _, _, _, _, u, y = chckin(na_max, nb_max, 0, 0, 0, nk_max, u, y)
+
+    # Number of samples and outputs
+    N, ny = y.shape
 
     A_aic = empty((na_max, nb_max + 1, nk_max + 1), dtype='object')
     B_aic = empty((na_max, nb_max + 1, nk_max + 1), dtype='object')
