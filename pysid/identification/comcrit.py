@@ -83,7 +83,7 @@ def aicarx(na_max, nb_max, nk_max, u, y, criterion='aicn'):
                 # Computes e(t) = A(na,nb,nk,q)y(t) - B(na,nb,nk,q)u(t)
                 e = lfilter(A, [1], y, axis=0) - lfilter(B, [1], u, axis=0)
 
-                N = len(e)
+                # Number of parameters
                 p = na + nb + 1
 
                 # Computes the cost function
