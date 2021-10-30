@@ -13,6 +13,7 @@ from scipy.linalg import qr, solve, toeplitz
 from numpy.linalg import matrix_rank
 from scipy.signal import lfilter, periodogram
 from scipy.optimize import leastsq, least_squares
+from .tseries import arma
 import numpy.fft as fft
 
 # functions
