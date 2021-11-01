@@ -14,6 +14,8 @@ from numpy.linalg import matrix_rank
 from scipy.signal import lfilter, periodogram
 from scipy.optimize import leastsq, least_squares
 from .tseries import arma
+from .solvers import ls, qrsol
+from ..io.check import chckin
 import numpy.fft as fft
 
 # functions
