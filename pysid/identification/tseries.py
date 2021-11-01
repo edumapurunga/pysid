@@ -150,66 +150,19 @@ def ma(nb, y, md='durbin'):
                 b[j]+= (j-p)*c2[j-p]*b[p]
             b[j] = b[j]/j
         B = copy(b)
-    #Prediction Error Method
+    # Prediction Error Method
     if md == 'pem':
-        #Define the prediction error
+        # Define the prediction error
         def pe(theta, nb, y):
             return lfilter([1], append([1], theta[0:nb+1]), y, axis=0)
-        #Estimate a high order AR
+        # Estimate a high order AR
         n = 50
         Ar = ar(n, y, 'burg')
-        #Estimate ê
+        # Estimate e hat
         ehat = lfilter(Ar, [1], y, axis=0)
-        #Least Squares Initialization
+        # Least Squares Initialization
         thetai = ls(0, nb, 1, ehat, y)[1]
         sol = least_squares(pe, thetai, gtol=1e-15, args=(nb, y.reshape((Ny))))
         theta = sol.x
         B = append([1], theta)
     return B
-
-#%% Auxiliary functions
-def levinson(R, n):
-    """
-    This function implements the Levinson algorithm for fast parameters computa
-    tions
-    """
-    A = empty((n,), dtype='object')
-    alfa = append(R[1], zeros((1, n)))
-    E = append(R[0], zeros((1, n)))
-    #Levinson Algorithm
-    for i in range(0, n):
-        k = -alfa[i]/E[i]
-        E[i+1] = (1 - abs(k)**2)*E[i]
-        if i == 0:
-            Av = array([1, k])
-        else:
-            An = Av[1:] + k*Av[1:][::-1]
-            Av = append(Av[0], An)
-            Av = append(Av, k)
-        if i != n-1:
-            alfa[i+1] = dot(Av, R[1:i+3][::-1]) #It should be dot here
-        A[i] = Av
-    return A
-
-def burg(y, n):
-    #Array Everything
-    y = array(y)
-    n = array(n)
-    #Size
-    N, ny = shape(y)
-    #Initialization
-    fi = y[1:]
-    gi = y[0:-1]
-    a = array([1])
-    Epsilon = zeros((n+1,))
-    Epsilon[0] = dot(y.T, y)
-    K = zeros((n,))
-    for i in range(0, n):
-        K[i] = -dot(fi.T, gi)/((dot(fi.T, fi) + dot(gi.T, gi))/2)
-        a = append(a, [0]) + K[i]*append([0], a[0:][::-1])
-        fin = fi + K[i]*gi
-        gin = K[i]*fi + gi
-        fi = fin[1:]
-        gi = gin[0:-1]
-        Epsilon[i+1] = (1-K[i]*K[i])
-    return a
