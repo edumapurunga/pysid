@@ -15,9 +15,9 @@ from numpy.linalg import matrix_rank
 from scipy.signal import lfilter, periodogram
 from scipy.optimize import leastsq, least_squares
 import numpy.fft as fft
-from .pemethod import chckin
-from .pemethod import ls
 # Internal imports
+from .solvers import ls, levinson, burg
+from ..io.check import chckin
 # functions
 __all__ = ['ar', 'arma', 'ma']
 # implementations
