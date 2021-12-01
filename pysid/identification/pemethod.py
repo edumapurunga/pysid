@@ -187,36 +187,30 @@ def armax(na, nb, nc, nk, u, y):
         A_ = []
         B_ = []
         E = copy(y[:,i:i+1])
-        # Influence of the inputs
+        # High order model
+        aho, bho = arx(50, [50,]*nu, [1,]*nu, u, y[:, i:i+1])
+        # Estimate of the prediction errors
+        ehat = lfilter(aho[0][0], [1], y[:, i:i+1], axis=0)
         for j in range(0, nu):
-            a, b = ls(na[i, i], nb[i,j], nk[i,j], u[:,j:j+1], y[:,i:i+1])
-            #A_ = append(A_, a)
-            B_ = append(B_, b)
-            E -= lfilter(append(zeros((1, nk[i,j])), b), append([1], a), u[:, j:j+1], axis=0) #u[:,i:i+1]
-        A_ = append(A_, a)
-        # Influence of other outputs
-        for j in range(0, ny):
-            if j != i:
-                a, b = ls(na[i, i], na[i, j]-1, 1, y[:,j:j+1], y[:,i:i+1])
-                A_ = append(A_, b)
-                E -= lfilter(append([0], b), append([1], a), y[:,j:j+1], axis=0)
-        # ARMA model
-        _, c = arma(0, nc, E)
-        # Estimate the white noise
-        c = c[1:]
-        #c = [0.8, -0.1]
-        B_ = append(B_, c)
-        thetai = append(A_, B_)
+            ehat -= lfilter(bho[0][j], [1], u[:, j:j+1], axis=0)
+        # Index
+        index = arange(ny)
+        index = delete(index, i)
+        # Inputs
+        inps = concatenate((y[:, index], u, ehat), axis=1)
+        nkk = array(append([1, ]*len(na[i, index]), append(nk[i, :], 1)), ndmin=2)
+        A_, BAC = arx([na[i, i]], array(append(na[i, index] - 1, append(nb[i, :], nc[i]-1)), ndmin=2), nkk, inps, y[:, i:i+1])
+        thetai = A_[0][0][1:]
+        for k in range(len(nkk[0])):
+            thetai = append(thetai, BAC[0][k][nkk[0][k]:])
         # Solve the minimization problem
         tar = y[0:Ny,i:i+1]
         tarna = na[i, i].reshape((1,))
-        index = arange(ny)
-        index = delete(index, i)
         Y = concatenate((tar, y[0:Ny,index]), axis=1)
         NA = concatenate((tarna, na[i][index]))
         sol = least_squares(pe, thetai, args=(NA, nb[i], nc[i], nk[i], u.reshape(Nu, nu), Y.reshape((Ny, ny))))
         theta = sol.x
-        C[i] = append([1], theta[sum(na[i])+sum(nb[i]+1):sum(na[i])+sum(nb[i]+1)+nc[i]+1])
+        C[i] = append([1], theta[sum(na[i])+sum(nb[i]+1):sum(na[i])+sum(nb[i]+1)+sum(nc[i])+1])
         k = sum(na[i])
         for j in range(0, nu):
             B[i, j] = append(zeros((1, nk[i,j])), theta[k:k+nb[i, j]+1])
