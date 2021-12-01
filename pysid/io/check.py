@@ -5,7 +5,7 @@
 # Imports
 from numpy import array, amax, ndarray, expand_dims, size, shape
 # Variables
-__all__ = ['chkin']
+__all__ = ['chckin']
 
 
 # functions
