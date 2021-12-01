@@ -166,7 +166,7 @@ def armax(na, nb, nc, nk, u, y):
         A = theta[0:sum(na)]
         ao = append([1], A[0:na[0]])
         #b = append(zeros((1, nk)), theta[sum(na):sum(na)+nb+1])
-        c = append([1], theta[sum(na)+sum(nb+1):sum(na)+sum(nb+1)+nc+1])
+        c = append([1], theta[sum(na)+sum(nb+1):sum(na)+sum(nb+1)+nc[0]+1])
         e = lfilter(ao, c, y[:,0], axis=0)
         k = sum(na)
         for i in range(0, nu):
