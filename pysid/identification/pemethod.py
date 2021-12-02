@@ -369,7 +369,7 @@ def bj(nb, nc, nd, nf, nk, u, y):
                 yn -= lfilter(b, a, u[:, i:i+1], axis=0)
         thetai = append(thetaf, thetab)
         ci = min(j, nu-1)
-        d, c = ls(nd[j], nc[j]-1, 1, u[:, ci:ci+1], yn)
+        d, c = ls(nd[j][0], nc[j][0]-1, 1, u[:, ci:ci+1], yn)
         # Verify Empty Arrays
         if nc[j] == 0:
             thetai = append(thetai, d)
@@ -378,11 +378,11 @@ def bj(nb, nc, nd, nf, nk, u, y):
         else:
             thetai = append(thetai, (c, d))
         # Solve the minimization problem
-        sol = least_squares(pe, thetai, args=(nf[j], nb[j], nc[j], nd[j], nk[j], u.reshape(Nu, nu), y[:,j]))
+        sol = least_squares(pe, thetai, args=(nf[j], nb[j], nc[j][0], nd[j][0], nk[j], u.reshape(Nu, nu), y[:,j]))
         theta = sol.x
         #B[j] = append(zeros((1, nk[j])), theta[nf[j]:nf[j]+nb[j]+1])
-        C[j] = append([1], theta[sum(nf[j])+sum(nb[j]+1):nc[j]+sum(nf[j])+sum(nb[j]+1)])
-        D[j] = append([1], theta[nc[j]+sum(nf[j])+sum(nb[j]+1):nd[j]+nc[j]+sum(nf[j])+sum(nb[j]+1)])
+        C[j] = append([1], theta[sum(nf[j])+sum(nb[j]+1):nc[j][0]+sum(nf[j])+sum(nb[j]+1)])
+        D[j] = append([1], theta[nc[j][0]+sum(nf[j])+sum(nb[j]+1):nd[j][0]+nc[j][0]+sum(nf[j])+sum(nb[j]+1)])
         #F[j] = append([1], theta[0:nf[j]])
         F_ = theta[0:sum(nf[j])]
         B_ = theta[sum(nf[j]):sum(nf[j])+sum(nb[j]+1)]
