@@ -5,29 +5,28 @@ Please, follow these guidelines in order to minimize efforts for all people invo
 
 For testing and development purposes and to contribute with code please follow the following instructions.
 
-We sharply recommend to create a dedicated development environment for your python with the exact requisites for running pysid.   
+We sharply recommend to create a dedicated development environment for your python with the exact requisites for running pysid. 
 
 1. If you are a first-time contributor:
    - Go to https://github.com/edumapurunga/pysid and click "fork" button to create your own copy of the project.
-   
-	- Clone the project to your local computer:
-   
+   - Clone the project to your local computer:
+
      ```bash
      git clone https://github.com/your-user-name/pysid.git
      ```
-   
+
    - Change directory:
-   
+
      ```bash
      cd pysid
      ```
-   
+
    - Add the main repository:
-   
+
      ```bash
      git remote add main-pysid https://github.com/edumapurunga/pysid.git
      ```
-   
+
    - Now you should have the code on your local computer and your remote repositories should be your personal repository on github and the main pysid repository. Check this by using the following command:
    
      ```bash
@@ -65,13 +64,13 @@ We sharply recommend to create a dedicated development environment for your pyth
 
 ### Coding
 
-We follow the basic python style PEP-8 (https://www.python.org/dev/peps/pep-0008/) for general code and PEP-257 (https://www.python.org/dev/peps/pep-0257/) for docstrings. 
+We follow the basic python style [PEP-8](https://www.python.org/dev/peps/pep-0008/) for general code and [PEP-257](https://www.python.org/dev/peps/pep-0257/) for docstrings. 
 
 Use one line docstrings for simple functions that do not require further reading to understand. 
 
 ```python
 def add(a, b):
-"""Returns the sum of a and b."""
+    """Returns the sum of a and b."""
     return a + b	
 ```
 
@@ -86,29 +85,28 @@ A detailed docstring should be given for functions that are not literal, usually
 
 ```python
 def function(a, b, c, opt=0):
-"""
-	Brief description of what the function does and what it is returned.
-	
-	Parameters
-	----------
-	a : type
-		description of parameter a
-	b : type
-		description of parameter b
-	c : type
-		description of parameter c
-	opt: type, optional
-		description of parameter opt
-	Returns
-	-------
-	d : type
-		description of parameter d
-	e : type
-		description of parameter e
-"""
+    """
+    Brief description of what the function does and what it is returned.
+    
+    Parameters
+    ----------
+    a : type
+        description of parameter a
+    b : type
+        description of parameter b
+    c : type
+        description of parameter c
+    opt: type, optional
+        description of parameter opt
+    Returns
+    -------
+    d : type
+        description of parameter d
+    e : type
+        description of parameter e
+    """
 ```
 
 ### Git
 
 We adopt the following conventions for branch names in git: use hyphen as a separator. To create a branch with a new feature use a general description followed by the feature.  For example, to implement that `method-instrumental-variable`. 
-

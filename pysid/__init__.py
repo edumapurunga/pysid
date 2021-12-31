@@ -13,4 +13,5 @@ name = "pysid"
 #from .pemethod import *
 #from .tseries import *
 from pysid.identification import *
-from pysid.correlation import * 
+from pysid.correlation import *
+from pysid.io import *
