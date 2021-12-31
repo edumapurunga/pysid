@@ -6,7 +6,7 @@ with open("README.md") as fh:
 # Set the setup file
 setuptools.setup(
     name="pysid",
-    version="0.0.2.beta",
+    version="0.0.2",
     author="Eduardo Mapurunga",
     author_email="edumapurunga@gmail.com",
     description="System Identification tools for python",
