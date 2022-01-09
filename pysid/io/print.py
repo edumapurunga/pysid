@@ -20,7 +20,9 @@ def poly_to_str(P,prec=3):
         Decimal precision for the coefficients. Default is prec = 3.
     Returns
     -------
-    
+    label : string
+        Formatted string in LaTeX ready to be displayed.
+
     """
     label = []
     aux = ""
