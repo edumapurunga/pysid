@@ -11,8 +11,48 @@ __all__ = ['chckin']
 # functions
 def chckin(na, nb, nc, nd, nf, nk, u, y):
     """
-    Function used to handle input argument and throw errors
+    Function used to handle input arguments for prediction error method (PEM)
+    identification, following the general polynomial model:
+        A(q)y(t) = [B(q)/F(q)]*u(t) + [C(q)/D(q)]*e(t)
+  
+    Parameters
+    ----------
+    na : array_like
+        Array of integers relative to the A(q) polynomial.   
+    nb : array_like
+        Array of integers relative to the B(q) polynomial.
+    nc : array_like
+        Array of integers relative to the C(q) polynomial.
+    nd : array_like
+        Array of integers relative to the D(q) polynomial.
+    nf : array_like
+        Array of integers relative to the F(q) polynomial.     
+    nk : array_like
+        Array of integers relative to the model's time delay.
+    u : array_like
+        Input data array.
+    y : array_like
+        Output data array.
+    Returns
+    -------
+    na : array_like
+        Validated na parameter.
+    nb : array_like
+        Validated nb parameter.
+    nc : array_like
+        Validated nc parameter.
+    nd : array_like
+        Validated nd parameter.
+    nf : array_like
+        Validated nf parameter.   
+    nk : array_like
+        Validated nk parameter. 
+    u : array_like
+        Validated input array.
+    y : array_like
+        Validated output array.
     """
+
     # Check if is at least a list or array
     if not isinstance(na, (int, list, ndarray)) or not isinstance(nb, (int, list, ndarray)) or\
        not isinstance(nc, (int, list, ndarray)) or not isinstance(nd, (int, list, ndarray)) or\

@@ -23,15 +23,15 @@ def gen_data(Ao, Bo, N):
     Parameters
     ----------
     Ao : array_like
-    Ao(q) polynomial coefficients.
+        Ao(q) polynomial coefficients.
     Bo : array_like
-    Bo(q) polynomial coefficients.
+        Bo(q) polynomial coefficients.
     N : int
-    Number of samples for the dataset.
+        Number of samples for the dataset.
     Returns
     -------
     data : ndarray
-    Dataset array in the form of [input, output].
+        Dataset array in the form of [input, output].
     """
     # Replicates the following experiment:
     # y(t) = Go(q)*u(t) + Ho(q)*e(t),
@@ -54,7 +54,7 @@ def load_data(filename, delim=",", skip_rows=1):
     Parameters
     ----------
     filename : string
-    Name of the file (with extension) from which the dataset is loaded.
+        Name of the file (with extension) from which the dataset is loaded.
     delim : string, optional
         Column delimiter. Default is "," for .csv files.
     skip_rows : int, optional

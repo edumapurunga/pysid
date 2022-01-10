@@ -14,13 +14,14 @@ def poly_to_str(P,prec=3):
     Parameters
     ----------
     P : ndarray of ndarray
-        Set of polynomials to be displayed.
-        
+        Set of polynomials to be displayed.        
     prec : integer, optional
         Decimal precision for the coefficients. Default is prec = 3.
     Returns
     -------
-    
+    label : string
+        Formatted string in LaTeX ready to be displayed.
+
     """
     label = []
     aux = ""
@@ -33,7 +34,7 @@ def poly_to_str(P,prec=3):
                     # Appending the first element (without the sum sign in front)
                     if power == 0:
                         # For monic polynomials
-                        aux = aux + str(1)
+                        aux = aux + coef_to_str(coef,prec)
                     else:
                         # For non-monic polynomials
                         aux = aux + coef_to_str(coef,prec) + "q^{" + "{0}".format(-power) + "}"
