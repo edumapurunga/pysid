@@ -1,7 +1,5 @@
-# This modules provides prediction error methods for discrete-time linear
-# models
 """
-Module for Prediction error methods
+    Module for Prediction error methods
 """
 
 # Imports
