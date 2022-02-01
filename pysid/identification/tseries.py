@@ -57,16 +57,12 @@ def ar(na, y, md = 'yw'):
         A = append([1], theta)
     return A
 
-def arma(na, nb, y, md='pem'):
+def arma(na, nc, y, md='pem'):
     """
     This functions estimates the parameters of an ARMA model defined as:
-        A(q)y(t) = B(q)e(t)
+        A(q)y(t) = C(q)e(t)
     """
-    y = array(y)
-    if na != 0:
-        na = array(na)
-    if nb != 0:
-        nb = array(nb)
+    na, _, nc, _, _, _, _, y = chckin(na, [], nc, [], [], [], y, y)
     # size
     Ny, ny = shape(y)
     # Hannan-Rissanen Algorithm
@@ -76,7 +72,7 @@ def arma(na, nb, y, md='pem'):
         Ar = ar(n, y, md='burg')
         ehat = lfilter(Ar, [1], y, axis=0)
         # Step 2: Estimate an initial ARMA model
-        A1, B1 = ls(na, nb, 1, ehat, y)
+        A1, B1 = ls(na, nc-1, 1, ehat, y)
         # Step 3: Reestimate based on an approximation of ML
         etil = lfilter(append([1], A1), [1], y, axis=0) - lfilter(append([0], B1), [1], ehat, axis=0)
         # Predictors Inputs
@@ -93,15 +89,15 @@ def arma(na, nb, y, md='pem'):
     # PEM algorithm
     if md == 'pem':
         # Define the prediction error
-        def pe(theta, na, nb, y):
+        def pe(theta, na, nc, y):
             return lfilter(append([1], theta[0:na]), append([1], theta[na:]), y, axis=0)
         # Least Squares Initialization
         n = 50
         Ar = ar(n, y, md='burg')
         ehat = lfilter(Ar, [1], y, axis=0)
-        A1, B1 = ls(na, nb, 1, ehat, y)
+        A1, B1 = ls(na, nc-1, 1, ehat, y)
         thetai = concatenate((A1, B1))
-        sol = least_squares(pe, thetai, gtol=1e-15, args=(na, nb, y.reshape((Ny))))
+        sol = least_squares(pe, thetai, gtol=1e-15, args=(na, nc, y.reshape((Ny))))
         theta = sol.x
         A = append([1], theta[0:na])
         B = append([1], theta[na:])
