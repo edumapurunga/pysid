@@ -105,7 +105,7 @@ def arma(na, nc, y, md='pem'):
 
 def ma(nc, y, md='durbin'):
     """
-    This function estimates the parameters of a moving avarage model in the form:
+    This function estimates the parameters of a moving average model in the form:
         y(t) = C(q)e(t)
     """
     nc = array(nc)
