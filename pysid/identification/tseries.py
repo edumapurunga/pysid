@@ -103,24 +103,24 @@ def arma(na, nc, y, md='pem'):
         B = append([1], theta[na:])
     return [A, B]
 
-def ma(nb, y, md='durbin'):
+def ma(nc, y, md='durbin'):
     """
     This function estimates the parameters of a moving avarage model in the form:
-        y(t) = B(q)e(t)
+        y(t) = C(q)e(t)
     """
-    nb = array(nb)
+    nc = array(nc)
     y = array(y)
     Ny, ny = shape(y)
     # Durbin Method
     if md == 'durbin':
         # Estimate a high order AR
-        n = 2*nb.item()
+        n = 2*nc.item()
         Ar = ar(n, y, 'burg')
         # Estimate the innovations
         ehat = lfilter(Ar, [1], y, axis=0)
         v = y - ehat
-        B = ls(0, nb, 1, ehat, v)[1]
-        B = append([1], B)
+        B = ls(0, nc-1, 1, ehat, v)[1]
+        C = append([1], B)
     # Vocariance recursion method
     if md == 'vrm':
         Psi = zeros((Ny,))
