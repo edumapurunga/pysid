@@ -1,0 +1,31 @@
+# CHANGELOG for pysid
+
+==============================
+Version 0.2.1
+
+Changed:
+
+- Documentation of pem module follwing PEP 8.
+
+
+Fixed:
+
+- Fixed a bug related to the printing of the
+	the first coefficient of B(q).
+- Fixed method 'hanna' for arma function.
+
+==============================
+Version 0.2.0 (02/12/2021)
+
+Added:
+- Printer module.
+
+
+===============================
+Version 0.0.1.post2 (08/09/2019)
+
+Added: 
+	- Prediction error method module. 
+
+
+
