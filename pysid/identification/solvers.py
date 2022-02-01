@@ -63,9 +63,9 @@ def qrsol(A, B):
     Q, R = qr(M)
     R1 = R[0:d, 0:d]
     R2 = R[0:d, d]
-    V = R[-1, -1]
+    V = R[d, d]
     theta = solve(R1, R2)
-    return [theta, V]
+    return [theta, V, R1]
  
 def levinson(R, n):
     """
