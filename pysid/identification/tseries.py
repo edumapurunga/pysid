@@ -139,26 +139,26 @@ def ma(nc, y, md='durbin'):
             #TODO: Verify how to compute the ceptrum
             c[k] = 1/Ny*sum(real(log(Psi)*exp(-1j*wk[k]*t)))
         # Estimate the MA parameters
-        b = zeros((nb+2,))
+        b = zeros((nc+2,))
         b[0] = 1
-        for j in range(1, nb+2):
+        for j in range(1, nc+2):
             for p in range(0, j):
                 b[j]+= (j-p)*c2[j-p]*b[p]
             b[j] = b[j]/j
-        B = copy(b)
+        C = copy(b)
     # Prediction Error Method
     if md == 'pem':
         # Define the prediction error
-        def pe(theta, nb, y):
-            return lfilter([1], append([1], theta[0:nb+1]), y, axis=0)
+        def pe(theta, nc, y):
+            return lfilter([1], append([1], theta[0:nc+1]), y, axis=0)
         # Estimate a high order AR
         n = 50
         Ar = ar(n, y, 'burg')
         # Estimate e hat
         ehat = lfilter(Ar, [1], y, axis=0)
         # Least Squares Initialization
-        thetai = ls(0, nb, 1, ehat, y)[1]
-        sol = least_squares(pe, thetai, gtol=1e-15, args=(nb, y.reshape((Ny))))
+        thetai = ls(0, nc-1, 1, ehat, y)[1]
+        sol = least_squares(pe, thetai, gtol=1e-15, args=(nc, y.reshape((Ny))))
         theta = sol.x
-        B = append([1], theta)
-    return B
+        C = append([1], theta)
+    return C
