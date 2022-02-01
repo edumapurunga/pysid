@@ -16,6 +16,7 @@ from scipy.optimize import leastsq, least_squares
 from .tseries import arma
 from .solvers import ls, qrsol
 from ..io.check import chckin
+from .models import polymodel
 import numpy.fft as fft
 
 # functions
@@ -57,7 +58,9 @@ def fir(nb, nk, u, y):
     # Solve the Ls problem
     phi = copy(phiu)
     y = reshape(y[L:Ny, :], ((Ny-L)*ny, 1))
-    theta = qrsol(phi, y)[0]
+    theta, V, R = qrsol(phi, y)
+    ehat = y - dot(theta, R)
+    Lam = 1/Ny*dot(ehat, ehat.T)
     b = theta[0:]
     # Output
     B = empty((ny, nu), dtype='object')
@@ -66,7 +69,11 @@ def fir(nb, nk, u, y):
         for j in range(0, nu):
             B[i, j] = append(zeros((1, nk[i, j])), b[k:k+nb[i, j]+1])
             k += nb[i,j] + 1
-    return B
+    # Model
+    m = polymodel('fir', None, B, None, None, None, nk, (u, y), nu, ny, 1)
+    # Set covariance
+    m.setcov(V**2, dot(R, R.T)/Ny, V**2)
+    return m
 
 def arx(na, nb, nk, u, y, opt=0):
     """
@@ -107,7 +114,6 @@ def arx(na, nb, nk, u, y, opt=0):
         # Input
         for j in range(0, nu):
             if (nb[i, j] > -1):
-                #phiu[:, kb:kb+nb[i, j]+1] = kron(toeplitz(u[L-nk[i, j]:-nk[i, j], j], u[L-nk[i, j]-nb[i, j]:L-nk[i, j]+1, j][::-1]), Iny[:, i:i+1]) #Should be Iny[:,j:j+1]
                 phiu[:, kb:kb+nb[i, j]+1] = kron(toeplitz(u[L-nk[i, j]:Nu-nk[i, j], j], u[L-nk[i, j]-nb[i, j]:L-nk[i, j]+1, j][::-1]), Iny[:, i:i+1])
                 kb += nb[i, j] + 1
         # Output
@@ -118,7 +124,7 @@ def arx(na, nb, nk, u, y, opt=0):
     # Solve the Ls problem
     phi = concatenate((phiy, phiu), axis=1)
     y = reshape(y[L:Ny, :], ((Ny-L)*ny, 1))
-    theta = qrsol(phi, y)[0]
+    theta, V, R = qrsol(phi, y)
     a = theta[0:da]
     b = theta[da:da+db+1]
     # Prepare the results
@@ -134,7 +140,10 @@ def arx(na, nb, nk, u, y, opt=0):
             else:
                 A[i, j] = append([0], a[ka:ka+na[i,j]])
             ka += na[i, j]
-    return [A, B]
+    # Model
+    m = polymodel('arx', A, B, None, None, None, nk, (u, y), nu, ny, 1)
+    m.setcov(V**2, V**2/Ny*dot(R, R.T), V**2/Ny)
+    return m 
 
 def armax(na, nb, nc, nk, u, y):
     """
@@ -222,7 +231,9 @@ def armax(na, nb, nc, nk, u, y):
             else:
                 A[i, j] = append([0], theta[k:k+na[i, j]])
             k += na[i, j]
-    return [A, B, C]
+        # Model
+        m = polymodel('armax', A, B, C, None, None, nk, (u, y), nu, ny, 1)
+    return m
 
 def oe(nb, nf, nk, u, y):
     """
@@ -295,7 +306,8 @@ def oe(nb, nf, nk, u, y):
             F[j, i] = append([1], f[kf:kf+nf[j, i]])
             kf += nf[j, i]
             kb += nb[j, i] + 1
-    return [B, F]
+        m = polymodel('oe', None, B, None, None, F, nk, (u, y), nu, ny, 1)
+    return m
 
 def bj(nb, nc, nd, nf, nk, u, y):
     """
@@ -393,7 +405,9 @@ def bj(nb, nc, nd, nf, nk, u, y):
             B[j, i] = append(zeros((1, nk[j, i])), B_[kb:kb+nb[j, i]+1])
             kf += nf[j, i]
             kb += nb[j, i] + 1
-    return [B, C, D, F]
+        # Model
+        m = polymodel('boxjenkins', None, B, C, D, F, nk, (u, y), nu, ny, 1)
+    return m
 
 # %% Testing functions
 def pem(A, B, C, D, F, u, y, mu=[] ,solver='lm'):
