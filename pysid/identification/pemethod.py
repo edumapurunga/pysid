@@ -7,7 +7,7 @@ from numpy import arange, atleast_2d, asarray, array, append, asscalar, copy, co
 delete, dot, empty, sum, size, amax, matrix, concatenate, shape, zeros, kron,\
 eye, reshape, convolve, sqrt, where, nonzero, correlate, equal, ndarray, pi, \
 absolute, exp, log, real, issubdtype, integer, expand_dims
-from scipy.linalg import qr, solve, toeplitz
+from scipy.linalg import qr, solve, toeplitz, inv
 from numpy.linalg import matrix_rank
 from scipy.signal import lfilter, periodogram
 from scipy.optimize import leastsq, least_squares
@@ -140,8 +140,8 @@ def arx(na, nb, nk, u, y, opt=0):
             ka += na[i, j]
     # Model
     m = polymodel('arx', A, B, None, None, None, nk, (u, y), nu, ny, 1)
-    m.setcov(V**2, V**2/Ny*dot(R, R.T), V**2/Ny)
-    return m 
+    m.setcov(V**2, V**2/Ny*inv(dot(R.T, R)), V**2/Ny,R)
+    return m
 
 def armax(na, nb, nc, nk, u, y):
     """
