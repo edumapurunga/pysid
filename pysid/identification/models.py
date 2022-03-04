@@ -3,7 +3,6 @@
 """
 #%%
 # Imports
-#from ..io.print import poly_to_str
 
 # Classes
 class polymodel():
@@ -47,10 +46,11 @@ class polymodel():
     def getdata(self):
         return self.data
 
-    def setcov(self, V, accuracy, ncov):
+    def setcov(self, V, accuracy, ncov, R):
         self.P = accuracy
         self.ecov = ncov
         self.costfunction = V
+        self.R = R
 
 def gen_poly_string(P,dim,name):
     """
@@ -150,5 +150,8 @@ def gen_model_string(m):
     model_str = model_str + "\nMODEL PROPERTIES:"
     model_str = model_str + "\nTime delay: " + str(m.d)
     model_str = model_str + "\nSample time: " + str(m.ts)
+    model_str = model_str + "\necov: " + str(m.ecov)
+    model_str = model_str + "\nCost function: " + str(m.costfunction)
+    model_str = model_str + "\n\nAccuracy:\n" + str(m.P)
 
     return model_str
