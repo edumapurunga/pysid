@@ -195,7 +195,8 @@ def armax(na, nb, nc, nk, u, y):
         B_ = []
         E = copy(y[:,i:i+1])
         # High order model
-        aho, bho = arx(50, [50,]*nu, [1,]*nu, u, y[:, i:i+1])
+        mho = arx(50, [50,]*nu, [1,]*nu, u, y[:, i:i+1])
+        aho, bho = mho.A, mho.B
         # Estimate of the prediction errors
         ehat = lfilter(aho[0][0], [1], y[:, i:i+1], axis=0)
         for j in range(0, nu):
@@ -206,7 +207,8 @@ def armax(na, nb, nc, nk, u, y):
         # Inputs
         inps = concatenate((y[:, index], u, ehat), axis=1)
         nkk = array(append([1, ]*len(na[i, index]), append(nk[i, :], 1)), ndmin=2, dtype='int')
-        A_, BAC = arx([na[i, i]], array(append(na[i, index] - 1, append(nb[i, :], nc[i]-1)), ndmin=2), nkk, inps, y[:, i:i+1])
+        m_ = arx([na[i, i]], array(append(na[i, index] - 1, append(nb[i, :], nc[i]-1)), ndmin=2), nkk, inps, y[:, i:i+1])
+        A_, BAC = m_.A, m_.B
         thetai = A_[0][0][1:]
         for k in range(len(nkk[0])):
             thetai = append(thetai, BAC[0][k][nkk[0][k]:])
