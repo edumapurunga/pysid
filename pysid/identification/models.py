@@ -25,6 +25,9 @@ class polymodel():
         self.ny = ny
         self.ts = ts
 
+        # TODO: Ensure that setcov() is always called in pemethod.py
+        self.ecov = -1
+
     # Iterable
     def __iter__(self):
         return (i for i in (self.A, self.B, self.C, self.D, self.F))
@@ -77,9 +80,11 @@ def gen_poly_string(P,dim,name):
         for col in range(cols):
             if rows == 1 and cols == 1:
                 # SISO subcase
+                # TODO: add dereference for SISO arrays 
                 poly_str = poly_str + name + " = " + str(P)
             else:
                 # General MIMO case
+                # TODO: add dereference for MIMO arrays 
                 poly_str = poly_str + name + str(row+1) + str(col+1) + " = " + str(P[row][col]) + "\n"
     
     return poly_str
@@ -150,8 +155,13 @@ def gen_model_string(m):
     model_str = model_str + "\nMODEL PROPERTIES:"
     model_str = model_str + "\nTime delay: " + str(m.d)
     model_str = model_str + "\nSample time: " + str(m.ts)
-    model_str = model_str + "\necov: " + str(m.ecov)
-    model_str = model_str + "\nCost function: " + str(m.costfunction)
-    model_str = model_str + "\n\nAccuracy:\n" + str(m.P)
+
+    # TODO: Define setcov() parameters for all pemethod.py functions
+    if m.ecov != -1:
+        model_str = model_str + "\necov: " + str(m.ecov)
+        model_str = model_str + "\nCost function per sample: " + str(m.costfunction/len(m.data[0]))
+        model_str = model_str + "\n\nAccuracy:\n" + str(m.P)
+
+    model_str = model_str + "\n________________________________________________________\n"
 
     return model_str
