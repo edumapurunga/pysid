@@ -49,11 +49,10 @@ class polymodel():
     def getdata(self):
         return self.data
 
-    def setcov(self, V, accuracy, ncov, R):
+    def setcov(self, V, accuracy, ncov):
         self.P = accuracy
         self.ecov = ncov
         self.costfunction = V
-        self.R = R
 
 def gen_poly_string(P,dim,name):
     """
@@ -153,13 +152,13 @@ def gen_model_string(m):
         index = index + 1
 
     model_str = model_str + "\nMODEL PROPERTIES:"
-    model_str = model_str + "\nTime delay: " + str(m.d)
     model_str = model_str + "\nSample time: " + str(m.ts)
+    model_str = model_str + "\nTime delay:\n" + str(m.d)
 
     # TODO: Define setcov() parameters for all pemethod.py functions
     if m.ecov != -1:
-        model_str = model_str + "\necov: " + str(m.ecov)
-        model_str = model_str + "\nCost function per sample: " + str(m.costfunction/len(m.data[0]))
+        model_str = model_str + "\n\necov: " + str(m.ecov)
+        model_str = model_str + "\nCost function per sample: " + str(m.costfunction)
         model_str = model_str + "\n\nAccuracy:\n" + str(m.P)
 
     model_str = model_str + "\n________________________________________________________\n"

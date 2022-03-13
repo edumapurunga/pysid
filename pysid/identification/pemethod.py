@@ -21,6 +21,46 @@ import numpy.fft as fft
 __all__ = ['fir', 'arx', 'armax', 'oe', 'bj', 'pem']
 
 # Implementation
+def filtmat(matrix, signal, diag=-1):
+    """
+    Filters a set of input signals (x) through a matrix (M) of polynomials, such that:
+        y(t) = M*x(t)
+    If a diagonal matrix (D) is also passed as a parameter, the output is then filtered
+    by the inverse of (D), resulting in:
+        y(t) = D^(-1)*M*x(t)
+
+    Parameters
+    ----------
+    matrix : ndarray of ndarray
+        Matrix of polynomials for linear filtering.
+    signal : ndarray
+        Input signal to be filtered.
+    diag : ndarray of ndarray, optional
+        Diagonal matrix to be used in inverse filtering.
+    Returns
+    -------
+    out : ndarray
+        Filtered output signal.
+    """
+    m, n = matrix.shape
+    ms, ns = signal.shape
+
+    # Checking type
+    if not isinstance(matrix, ndarray) or not isinstance(signal,ndarray):
+        raise Exception("Input arguments' type must be numpy.ndarray.")
+
+    # Checking dimension
+    if ns != n:
+        raise Exception("The input signal must have the same number of columns than the input matrix")
+
+    output = zeros([ms, m])
+    for i in range(m):
+        for j in range(n):
+            output[:, i] += lfilter(matrix[i, j], [1], signal[:, j], axis = 0)
+        if diag != -1:
+            output[:, i]  = lfilter([1], diag[i, i], output[:, i], axis = 0)
+    return output
+
 def fir(nb, nk, u, y):
     """
     This function estimates a FIR model based on the input-ouput data provided
@@ -140,7 +180,13 @@ def arx(na, nb, nk, u, y, opt=0):
             ka += na[i, j]
     # Model
     m = polymodel('arx', A, B, None, None, None, nk, (u, y), nu, ny, 1)
-    m.setcov(V**2, V**2/Ny*inv(dot(R.T, R)), V**2/Ny,R)
+    e = filtmat(A, y) - filtmat(B, u[L:Nu, :])
+    sig = e.T @ e
+    if len(sig == 1):
+        arg = sig * (R.T @ R)
+    else:
+        arg = R.T @ sig @ R
+    m.setcov(V**2/Ny, inv(arg), sig)
     return m
 
 def armax(na, nb, nc, nk, u, y):
