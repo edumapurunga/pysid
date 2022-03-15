@@ -58,8 +58,45 @@ def filtmat(matrix, signal, diag=-1):
         for j in range(n):
             output[:, i] += lfilter(matrix[i, j], [1], signal[:, j], axis = 0)
         if diag != -1:
-            output[:, i]  = lfilter([1], diag[i, i], output[:, i], axis = 0)
+            if isvec == True:
+                output[:, i] = lfilter([1], diag[i, 1], output[:, i], axis = 0)
+            else:
+                output[:, i] = lfilter([1], diag[i, i], output[:, i], axis = 0)
     return output
+
+def sortmat(A):
+    """
+    Sorts a square matrix whose diagonal elements have been shifted to its first column,
+    such as:
+    A = [A11, A12, A13, A14]
+        [A22, A21, A23, A24]
+        [A33, A31, A32, A34]
+        [A44, A41, A42, A43]
+    The expected output for the function is
+    Ao =
+        [A11, A12, A13, A14]
+        [A21, A22, A23, A24]
+        [A31, A32, A33, A34]
+        [A41, A42, A43, A44]
+
+    Parameters
+    ----------
+    A : ndarray
+        Matrix to be sorted. Must have more than one row.
+    Returns
+    -------
+    Ao : ndarray
+        Sorted output.
+    """
+    Ao = copy(A)
+    m, _ = Ao.shape
+
+    if m > 1:
+        for i in range(1,m):
+            Ao[i,i] = Ao[i,0]
+            for j in range(0,i):
+                Ao[i,j] = A[i,j+1]
+    return Ao
 
 def fir(nb, nk, u, y):
     """
