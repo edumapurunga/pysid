@@ -22,41 +22,46 @@ def poly_to_str(P,prec=3):
     -------
     
     """
+    if P is None:
+        raise Exception("Polynomial is equal to None.")
     label = []
     aux = ""
     power = 0
     first_elem = True
-    for poly in P:
-        for coef in poly:
-            if coef != 0:
-                if first_elem == True:
-                    # Appending the first element (without the sum sign in front)
-                    if power == 0:
-                        # For monic polynomials
-                        aux = aux + str(1)
+    #if P.shape == (1,1):
+    #    P = P.reshape(1,)
+    for row in P:
+        for poly in row:
+            for coef in poly:
+                if coef != 0:
+                    if first_elem == True:
+                        # Appending the first element (without the sum sign in front)
+                        if power == 0:
+                            # For monic polynomials
+                            aux = aux + str(1)
+                        else:
+                            # For non-monic polynomials
+                            aux = aux + coef_to_str(coef,prec) + "q^{" + "{0}".format(-power) + "}"
+                        # Sets first element flag to False
+                        first_elem = False
+                    elif coef > 0:
+                        # Appeding a positive element
+                        aux = aux + " + " + coef_to_str(coef,prec) + "q^{" + "{0}".format(-power) + "}"
                     else:
-                        # For non-monic polynomials
-                        aux = aux + coef_to_str(coef,prec) + "q^{" + "{0}".format(-power) + "}"
-                    # Sets first element flag to False
-                    first_elem = False
-                elif coef > 0:
-                    # Appeding a positive element
-                    aux = aux + " + " + coef_to_str(coef,prec) + "q^{" + "{0}".format(-power) + "}"
-                else:
-                    # Appending a negative element
-                    aux = aux + " " + coef_to_str(coef,prec) + "q^{" + "{0}".format(-power) + "}"
-            power = power + 1
-        
-        # Appends current polynomial to the label string
-        label.append(aux)
+                        # Appending a negative element
+                        aux = aux + " " + coef_to_str(coef,prec) + "q^{" + "{0}".format(-power) + "}"
+                power = power + 1
 
-        # Resets variables for the next polynomial
-        power = 0
-        first_elem = True
-        aux = ""
+            # Appends current polynomial to the label string
+            label.append(aux)
+
+            # Resets variables for the next polynomial
+            power = 0
+            first_elem = True
+            aux = ""
     return label
 
-def print_poly(P,dim,name):
+def print_poly(P,dim,name,prec=3):
     """
     Prints a MIMO polynomial model.
 
@@ -68,11 +73,15 @@ def print_poly(P,dim,name):
         Number of outputs (ny) and inputs (nu) in this order, that is, [ny, nu].
     name : string
         Name displayed for the polynomial model.
+    prec : integer, optional
+        Decimal precision for the coefficients. Default is prec = 3.
     Returns
     -------
     
     """
-    s = poly_to_str(P)
+    if P is None:
+        raise Exception("Polynomial is equal to None.")
+    s = poly_to_str(P,prec)
     rows, cols = dim[0], dim[1]
     index = 0
     for row in range(rows):
@@ -81,32 +90,36 @@ def print_poly(P,dim,name):
                 # Prints SISO subcase
                 display(Math(r'' + name + '(q^{-1}) = ' + s[index]))
             else:
-                # Prints general MIMO case
-                poly_index = "{" + str(row+1) + str(col+1) + "}"
-                display(Math(r'' + name + "_" + poly_index + '(q^{-1}) = ' + s[index]))
+                if name == "C" or name == "D":
+                    poly_index = "{" + str(row+1) + "}"
+                    display(Math(r'' + name + "_" + poly_index + '(q^{-1}) = ' + s[index]))
+                else:
+                    # Prints general MIMO case
+                    poly_index = "{" + str(row+1) + str(col+1) + "}"
+                    display(Math(r'' + name + "_" + poly_index + '(q^{-1}) = ' + s[index]))
             index = index + 1
 
-def print_model(model,dim,names=['A','B','C','D','F']):
+def print_model(model,prec=3,names=['A','B','C','D','F']):
     """
     Prints the set of polynomials that define a given model.
 
     Parameters
     ----------
-    model : model object
+    model : polymodel object
         Identification model object containing a set of polynomials.
-    dim : array_like
-        Number of outputs (ny) and inputs (nu) in this order, that is, [ny, nu].
+    prec : integer, optional
+        Decimal precision for the coefficients. Default is prec = 3.
     names : list of strings
         Name displayed for each polynomial in the model. Default is 'A','B','C','D','F']
     Returns
     -------
     
     """
-    # For now, model should be [A,B,C,D,F] -- to be replaced with a model class
+    # Model should be a pysid.identification.models.polymodel() object
     index = 0
-    ny, nu = dim[0], dim[1]
+    ny, nu = model.ny, model.nu
     dims = [[ny,ny],[ny,nu],[ny,1],[ny,1],[ny,nu]]
     for poly in model:
-        if poly != 0:
-            print_poly(poly,dims[index],names[index])
+        if poly is not None:
+            print_poly(poly,dims[index],names[index],prec)
             index = index + 1
