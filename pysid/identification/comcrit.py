@@ -32,7 +32,7 @@ def aicarx(na_max, nb_max, nk_max, u, y, criterion='aicn'):
     Estimates ARX model based on Akaike's Information Criterion (AIC) given
     the upper limits for the polynomial orders (na_max, nb_max, nk_max) and
     a pair of input-output data vectors (u, y). Returns the lowest AIC cost
-    and the best fitting A(q) and B(q) polynomials for the ARX model: 
+    and the best fitting polymodel for the ARX model: 
         A(q)y(t) = B(q)u(t) + e(t),
 
     Parameters
@@ -51,10 +51,8 @@ def aicarx(na_max, nb_max, nk_max, u, y, criterion='aicn'):
         critrion to be evaluated.
     Returns
     -------
-    A : ndarray
-        Array containing the A(q) polynomial
-    B : ndarray
-        Array containing the B(q) polynomial
+    m : polymodel
+        Lowest cost estimate polymodel object
     J_aic : int
         AIC cost function value using A(q) and B(q)
     """
@@ -64,8 +62,7 @@ def aicarx(na_max, nb_max, nk_max, u, y, criterion='aicn'):
     # Number of samples and outputs
     N, ny = y.shape
 
-    A_aic = empty((na_max, nb_max + 1, nk_max + 1), dtype='object')
-    B_aic = empty((na_max, nb_max + 1, nk_max + 1), dtype='object')
+    m_aic = empty((na_max, nb_max + 1, nk_max + 1), dtype='object')
     J_aic = empty((na_max, nb_max + 1, nk_max + 1), dtype='object')
 
     criteria = {'aic': aiccrit, 'aicn': aicncrit, 'aicc': aicccrit}
@@ -75,24 +72,16 @@ def aicarx(na_max, nb_max, nk_max, u, y, criterion='aicn'):
         for nb in range(0,nb_max+1):
             for nk in range(0,nk_max+1):
                 # Computes ARX polynomials for current (na, nb, nk)
-                A, B = arx(na, nb, nk, u, y)
-
-                # Array-list magic for lfilter 
-                A = A.tolist()[0][0]
-                B = B.tolist()[0][0]
-
-                # Computes e(t) = A(na,nb,nk,q)y(t) - B(na,nb,nk,q)u(t)
-                e = lfilter(A, [1], y, axis=0) - lfilter(B, [1], u, axis=0)
+                m = arx(na, nb, nk, u, y)
 
                 # Number of parameters
                 p = na + nb + 1
 
                 # Computes the cost function
-                J = (1/N) * dot(e.T, e)[0][0]
+                J = m.costfunction
 
                 # Add current polynomials to their respective matrix
-                A_aic[na - 1, nb, nk] = A
-                B_aic[na - 1, nb, nk] = B
+                m_aic[na - 1, nb, nk] = m
 
                 # Computes AIC cost function
                 J_aic[na - 1, nb, nk] = crit(J, N, p)
@@ -100,5 +89,5 @@ def aicarx(na_max, nb_max, nk_max, u, y, criterion='aicn'):
     # Finds the lowest cost estimate indices
     min_index = where(J_aic == amin(J_aic))
 
-    A, B, J_aic = A_aic[min_index], B_aic[min_index], J_aic[min_index]
-    return [A, B, J_aic]
+    m, J_aic = m_aic[min_index][0], J_aic[min_index]
+    return [m, J_aic]
