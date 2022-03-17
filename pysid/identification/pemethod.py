@@ -202,6 +202,7 @@ def arx(na, nb, nk, u, y, opt=0):
                 ka += na[i,j]
     # Solve the Ls problem
     phi = concatenate((phiy, phiu), axis=1)
+    yo = copy(y)
     y = reshape(y[L:Ny, :], ((Ny-L)*ny, 1))
     theta, V, R = qrsol(phi, y)
     a = theta[0:da]
@@ -221,12 +222,12 @@ def arx(na, nb, nk, u, y, opt=0):
             ka += na[i, j]
     # Model
     m = polymodel('arx', A, B, None, None, None, nk, (u, y), nu, ny, 1)
-    e = filtmat(A, y) - filtmat(B, u[L:Nu, :])
+    e = filtmat(A, yo[L:Ny, :]) - filtmat(B, u[L:Nu, :])
     sig = e.T @ e
-    if len(sig == 1):
+    if len(sig) == 1:
         arg = sig * (R.T @ R)
     else:
-        arg = R.T @ sig @ R
+        arg = -1 # phi.T @ inv(sig) @ phi
     m.setcov(V**2/Ny, inv(arg), sig)
     return m
 
