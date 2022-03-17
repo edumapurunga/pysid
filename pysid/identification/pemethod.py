@@ -21,13 +21,15 @@ import numpy.fft as fft
 __all__ = ['fir', 'arx', 'armax', 'oe', 'bj', 'pem']
 
 # Implementation
-def filtmat(matrix, signal, diag=-1):
+def filtmat(matrix, signal, diag=-1, isvec=True):
     """
     Filters a set of input signals (x) through a matrix (M) of polynomials, such that:
         y(t) = M*x(t)
     If a diagonal matrix (D) is also passed as a parameter, the output is then filtered
     by the inverse of (D), resulting in:
         y(t) = D^(-1)*M*x(t)
+    The diagonal matrix can be (and is, by default) represented as a column vector
+    containing the diagonal entries in its rows.
 
     Parameters
     ----------
@@ -36,7 +38,9 @@ def filtmat(matrix, signal, diag=-1):
     signal : ndarray
         Input signal to be filtered.
     diag : ndarray of ndarray, optional
-        Diagonal matrix to be used in inverse filtering.
+        Diagonal matrix to be used in inverse filtering. Default is -1, which bypasses filtering.
+    isvec: boolean, optional
+        Flag that indicates whether the diagonal matrix (diag) is represented as a vector.
     Returns
     -------
     out : ndarray
@@ -59,7 +63,7 @@ def filtmat(matrix, signal, diag=-1):
             output[:, i] += lfilter(matrix[i, j], [1], signal[:, j], axis = 0)
         if diag != -1:
             if isvec == True:
-                output[:, i] = lfilter([1], diag[i, 1], output[:, i], axis = 0)
+                output[:, i] = lfilter([1], diag[i, 0], output[:, i], axis = 0)
             else:
                 output[:, i] = lfilter([1], diag[i, i], output[:, i], axis = 0)
     return output
