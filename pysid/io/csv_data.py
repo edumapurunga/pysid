@@ -5,7 +5,7 @@
 """
 
 
-from numpy import loadtxt, savetxt, concatenate
+from numpy import loadtxt, savetxt, concatenate, sqrt
 from numpy.random import rand, randn
 from scipy.signal import lfilter
 import errno
@@ -13,31 +13,34 @@ import os
 
 __all__ = ['load_data', 'save_data', 'gen_data']
 
-def gen_data(Ao, Bo, N):
+def gen_data(Ao, Bo, N, u, e_var):
     """
     author: @lima84
-    Generates a set of input and output data following:
+    Generates a SISO set of input and output data following:
         y(t) = Go(q)*u(t) + Ho(q)*e(t),
     where G(q) = Bo(q)/Ao(q) and H(q) = 1/Ao(q).
 
     Parameters
     ----------
     Ao : array_like
-    Ao(q) polynomial coefficients.
+        Ao(q) polynomial coefficients.
     Bo : array_like
-    Bo(q) polynomial coefficients.
+        Bo(q) polynomial coefficients.
     N : int
-    Number of samples for the dataset.
+        Number of samples for the dataset.
+    u : array_like
+        Input signal.
+    e_var : float
+        Variance of e(t).
     Returns
     -------
     data : ndarray
-    Dataset array in the form of [input, output].
+        Dataset array in the form of [input, output].
     """
     # Replicates the following experiment:
     # y(t) = Go(q)*u(t) + Ho(q)*e(t),
     # where u(t) is the system input and e(t) white noise
-    u = -1 + 2*rand(N, 1)   # Defines input signal
-    e = 0.01*randn(N, 1)    # Emulates gaussian white noise with std = 0.01
+    e = sqrt(e_var)*randn(N, 1)    # Emulates gaussian white noise
 
     # Calculates the y ARX: G(q) = B(q)/A(q) and H(q) = 1/A(q)
     y = lfilter(Bo, Ao, u, axis=0) + lfilter([1], Ao, e, axis=0)
