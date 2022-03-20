@@ -61,6 +61,35 @@ def poly_to_str(P,prec=3):
             aux = ""
     return label
 
+def matrix_to_str(matrix,prec=3):
+    """
+    Converts a matrix of float into an equivalent display string, following LaTeX
+    bmatrix syntax.
+
+    Parameters
+    ----------
+    matrix : ndarray
+        Matrix to be displayed.
+    prec : integer, optional
+        Decimal precision for the coefficients. Default is prec = 3.
+    Returns
+    -------
+
+    """
+    m,n = matrix.shape
+
+    label = r"\begin{bmatrix}"
+    for row in range(m):
+        for col in range(n):
+            label = label + coef_to_str(matrix[row][col],prec)
+            if col != n-1:
+                label = label + r"&"
+        if row != m-1:
+            label = label + r"\\ "
+
+    label = label + "\end{bmatrix}"
+    return label
+
 def print_poly(P,dim,name,prec=3):
     """
     Prints a MIMO polynomial model.
@@ -123,3 +152,7 @@ def print_model(model,prec=3,names=['A','B','C','D','F']):
         if poly is not None:
             print_poly(poly,dims[index],names[index],prec)
             index = index + 1
+
+    if hasattr(model, 'P'):
+        print(f'\nAccuracy:')
+        display(Math(matrix_to_str(model.P,prec)))
