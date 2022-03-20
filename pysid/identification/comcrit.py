@@ -89,5 +89,5 @@ def aicarx(na_max, nb_max, nk_max, u, y, criterion='aicn'):
     # Finds the lowest cost estimate indices
     min_index = where(J_aic == amin(J_aic))
 
-    m, J_aic = m_aic[min_index][0], J_aic[min_index]
-    return [m, J_aic]
+    m = m_aic[min_index][0]
+    return m
