@@ -227,7 +227,11 @@ def arx(na, nb, nk, u, y, opt=0):
     if len(sig) == 1:
         arg = (R.T @ R) / sig
     else:
-        arg = -1 # phi.T @ inv(sig) @ phi
+        arg = zeros((da + db, da + db))
+        isig = inv(sig)
+        for k in range(0, phi.shape[0], ny):
+            arg += phi[k:k+ny, :].T @ isig @ phi[k:k+ny, :]
+        arg /= Ny # phi.T @ inv(sig) @ phi
     m.setcov(V**2/Ny, inv(arg), sig)
     return m
 
