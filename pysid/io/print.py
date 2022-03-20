@@ -153,6 +153,9 @@ def print_model(model,prec=3,names=['A','B','C','D','F']):
             print_poly(poly,dims[index],names[index],prec)
             index = index + 1
 
+    if hasattr(model, 'costfunction'):
+        print(f'Cost function per sample: ' + coef_to_str(model.costfunction,prec))
+
     if hasattr(model, 'P'):
-        print(f'\nAccuracy:')
+        print(f'Accuracy:')
         display(Math(matrix_to_str(model.P,prec)))
