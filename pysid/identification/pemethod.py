@@ -225,7 +225,7 @@ def arx(na, nb, nk, u, y, opt=0):
     e = filtmat(A, yo[L:Ny, :]) - filtmat(B, u[L:Nu, :])
     sig = e.T @ e
     if len(sig) == 1:
-        arg = sig * (R.T @ R)
+        arg = (R.T @ R) / sig
     else:
         arg = -1 # phi.T @ inv(sig) @ phi
     m.setcov(V**2/Ny, inv(arg), sig)
