@@ -232,17 +232,14 @@ def arx(na, nb, nk, u, y, opt=0):
             ka += na[i, j]
     # Model
     m = polymodel('arx', A, B, None, None, None, nk, (u, y), nu, ny, 1)
-    e = filtmat(A, yo[L:Ny, :]) - filtmat(B, u[L:Nu, :])
+    e = filtmat(A, yo[L:Ny, 0:ny]) - filtmat(B, u[L:Nu, 0:nu])
     sig = e.T @ e
-    if len(sig) == 1:
-        arg = (R.T @ R) / sig
-    else:
-        arg = zeros((da + db, da + db))
-        isig = inv(sig)
-        for k in range(0, phi.shape[0], ny):
-            arg += phi[k:k+ny, :].T @ isig @ phi[k:k+ny, :]
-        arg /= Ny # phi.T @ inv(sig) @ phi
-    m.setcov(V**2/Ny, inv(arg), sig)
+    isig = inv(sig)
+    M = zeros((da + db, da + db))
+    for k in range(0, phi.shape[0], ny):
+        M += phi[k:k+ny, :].T @ isig @ phi[k:k+ny, :]
+    M /= Ny # phi.T @ inv(sig) @ phi
+    m.setcov(V**2/Ny, inv(M), sig)
     return m
 
 def armax(na, nb, nc, nk, u, y):
