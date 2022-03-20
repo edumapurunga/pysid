@@ -54,113 +54,110 @@ class polymodel():
         self.ecov = ncov
         self.costfunction = V
 
-def gen_poly_string(P,dim,name):
-    """
-    Generates a string for displaying a MIMO polynomial model.
+    def gen_poly_string(self, P, dim, name):
+        """
+        Generates a string for displaying a MIMO polynomial model.
 
-    Parameters
-    ----------
-    P : ndarray
-        Polynomial to be converted.
-    dim : array_like
-        Number of outputs (ny) and inputs (nu) in this order, that is, [ny, nu].
-    name : string
-        Name displayed for the polynomial model.
-    Returns
-    -------
-    poly_str : string
-        Equivalent polynomial string, ready for display.
+        Parameters
+        ----------
+        P : ndarray
+            Polynomial to be converted.
+        dim : array_like
+            Number of outputs (ny) and inputs (nu) in this order, that is, [ny, nu].
+        name : string
+            Name displayed for the polynomial model.
+        Returns
+        -------
+        poly_str : string
+            Equivalent polynomial string, ready for display.
 
-    """
-    
-    poly_str = ""
-    rows, cols = dim[0], dim[1]
-    for row in range(rows):
-        for col in range(cols):
-            if rows == 1 and cols == 1:
-                # SISO subcase
-                # TODO: add dereference for SISO arrays 
-                poly_str = poly_str + name + " = " + str(P)
-            else:
-                # General MIMO case
-                # TODO: add dereference for MIMO arrays 
-                poly_str = poly_str + name + str(row+1) + str(col+1) + " = " + str(P[row][col]) + "\n"
-    
-    return poly_str
+        """
 
-def gen_model_string(m):
-    """
-    Generates a string for displaying the contents of a polymodel object.
+        poly_str = ""
+        rows, cols = dim[0], dim[1]
+        for row in range(rows):
+            for col in range(cols):
+                if rows == 1 and cols == 1:
+                    # SISO subcase
+                    poly_str = poly_str + name + " = " + str(P)
+                else:
+                    # General MIMO case
+                    poly_str = poly_str + name + str(row+1) + str(col+1) + " = " + str(P[row][col]) + "\n"
 
-    Parameters
-    ----------
-    m : polymodel
-        Polynomial object to be displayed.
-    Returns
-    -------
-    model_str : string
-        Equivalent model string, ready for display.
-    """
-    
-    # Generating model header
-    m.name = m.name.upper()
-    nu, ny = m.nu, m.ny
-    model_str = ""
+        return poly_str
 
-    if nu == 1:
-        model_str = model_str + "SI"
-    else:
-        model_str = model_str + "MI"
+    def gen_model_string(self):
+        """
+        Generates a string for displaying the contents of a polymodel object.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        model_str : string
+            Equivalent model string, ready for display.
+        """
+
+        # Generating model header
+        self.name = self.name.upper()
+        nu, ny = self.nu, self.ny
+        model_str = ""
+
+        if nu == 1:
+            model_str = model_str + "SI"
+        else:
+            model_str = model_str + "MI"
+
+        if ny == 1:
+            model_str = model_str + "SO "
+        else:
+            model_str = model_str + "MO "
+
+        model_str = model_str + self.name + " model (" + str(nu) + " in, " + str(ny) + " out)\n\n"
         
-    if ny == 1:
-        model_str = model_str + "SO "
-    else:
-        model_str = model_str + "MO " 
+        # Defining bitmask so as to conditionally print relevant polynomials
+        names = [ "A",      "B",      "C",     "D",     "F"   ]
+        dims  = [ [ny,ny], [ny,nu], [ny,1],  [ny,1],  [ny,nu] ]
+        mask  = [ False,   False,   False,   False,   False   ]
 
-    model_str = model_str + m.name + " model (" + str(nu) + " in, " + str(ny) + " out)\n\n"
-    
-    # Defining bitmask so as to conditionally print relevant polynomials
-    names = [ "A",      "B",      "C",     "D",     "F"   ]
-    dims  = [ [ny,ny], [ny,nu], [ny,1],  [ny,1],  [ny,nu] ]
-    mask  = [ False,   False,   False,   False,   False   ]
+        if self.name == "AR":
+            mask[0] = True
+        elif self.name == "MA":
+            mask[2] = True
+        elif self.name == "ARMA":
+            mask[0] = mask[2] = True
+        elif self.name == "ARX":
+            mask[0] = mask[1] = True
+        elif self.name == "ARMAX":
+            mask[0] = mask[1] = mask[2] = True
+        elif self.name == "FIR":
+            mask[1] = True
+        elif self.name == "OE":
+            mask[1] = mask[4] = True
+        elif self.name == "BJ":
+            mask[1] = mask[2] = mask[3] = mask[4] = True
+        elif self.name == "PEM":
+            mask[0] = mask[1] = mask[2] = mask[3] = mask[4] = True
+        else:
+            raise ValueError('Invalid model name.')
 
-    if m.name == "AR":
-        mask[0] = True
-    elif m.name == "MA":
-        mask[2] = True
-    elif m.name == "ARMA":
-        mask[0] = mask[2] = True
-    elif m.name == "ARX":
-        mask[0] = mask[1] = True
-    elif m.name == "ARMAX":
-        mask[0] = mask[1] = mask[2] = True
-    elif m.name == "FIR":
-        mask[1] = True
-    elif m.name == "OE":
-        mask[1] = mask[4] = True
-    elif m.name == "BJ":
-        mask[1] = mask[2] = mask[3] = mask[4] = True
-    elif m.name == "PEM":
-        mask[0] = mask[1] = mask[2] = mask[3] = mask[4] = True
-    else:
-        raise ValueError('Invalid model name.')
+        index = 0
+        for poly in self:
+            if mask[index]:
+                model_str = model_str + self.gen_poly_string(poly,dims[index],names[index]) + "\n"
+            index = index + 1
 
-    index = 0
-    for poly in m:
-        if mask[index]:
-            model_str = model_str + gen_poly_string(poly,dims[index],names[index]) + "\n"
-        index = index + 1
+        model_str = model_str + "\nMODEL PROPERTIES:"
+        model_str = model_str + "\nSample time: " + str(self.ts)
+        model_str = model_str + "\nTime delay:\n" + str(self.d)
 
-    model_str = model_str + "\nMODEL PROPERTIES:"
-    model_str = model_str + "\nSample time: " + str(m.ts)
-    model_str = model_str + "\nTime delay:\n" + str(m.d)
+        # TODO: Define setcov() parameters for all pemethod.py functions
+        if self.ecov != -1:
+            model_str = model_str + "\n\necov: " + str(self.ecov)
+            model_str = model_str + "\nCost function per sample: " + str(self.costfunction)
+            model_str = model_str + "\n\nAccuracy:\n" + str(self.P)
 
-    # TODO: Define setcov() parameters for all pemethod.py functions
-    if m.ecov != -1:
-        model_str = model_str + "\n\necov: " + str(m.ecov)
-        model_str = model_str + "\nCost function per sample: " + str(m.costfunction)
-        model_str = model_str + "\n\nAccuracy:\n" + str(m.P)
+        model_str = model_str + "\n________________________________________________________\n"
 
-    model_str = model_str + "\n________________________________________________________\n"
-
-    return model_str
+        return model_str
