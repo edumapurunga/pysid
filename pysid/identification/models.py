@@ -92,8 +92,7 @@ class polymodel():
 
         Parameters
         ----------
-        m : polymodel
-            Polynomial object to be displayed.
+
         Returns
         -------
         model_str : string
