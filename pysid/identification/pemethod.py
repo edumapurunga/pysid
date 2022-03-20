@@ -7,7 +7,7 @@ from numpy import arange, atleast_2d, asarray, array, append, asscalar, copy, co
 delete, dot, empty, sum, size, amax, matrix, concatenate, shape, zeros, kron,\
 eye, reshape, convolve, sqrt, where, nonzero, correlate, equal, ndarray, pi, \
 absolute, exp, log, real, issubdtype, integer, expand_dims
-from scipy.linalg import qr, solve, toeplitz
+from scipy.linalg import qr, solve, toeplitz, inv
 from numpy.linalg import matrix_rank
 from scipy.signal import lfilter, periodogram
 from scipy.optimize import leastsq, least_squares
@@ -21,6 +21,87 @@ import numpy.fft as fft
 __all__ = ['fir', 'arx', 'armax', 'oe', 'bj', 'pem']
 
 # Implementation
+def filtmat(matrix, signal, diag=-1, isvec=True):
+    """
+    Filters a set of input signals (x) through a matrix (M) of polynomials, such that:
+        y(t) = M*x(t)
+    If a diagonal matrix (D) is also passed as a parameter, the output is then filtered
+    by the inverse of (D), resulting in:
+        y(t) = D^(-1)*M*x(t)
+    The diagonal matrix can be (and is, by default) represented as a column vector
+    containing the diagonal entries in its rows.
+
+    Parameters
+    ----------
+    matrix : ndarray of ndarray
+        Matrix of polynomials for linear filtering.
+    signal : ndarray
+        Input signal to be filtered.
+    diag : ndarray of ndarray, optional
+        Diagonal matrix to be used in inverse filtering. Default is -1, which bypasses filtering.
+    isvec: boolean, optional
+        Flag that indicates whether the diagonal matrix (diag) is represented as a vector.
+    Returns
+    -------
+    out : ndarray
+        Filtered output signal.
+    """
+    m, n = matrix.shape
+    ms, ns = signal.shape
+
+    # Checking type
+    if not isinstance(matrix, ndarray) or not isinstance(signal,ndarray):
+        raise Exception("Input arguments' type must be numpy.ndarray.")
+
+    # Checking dimension
+    if ns != n:
+        raise Exception("The input signal must have the same number of columns than the input matrix")
+
+    output = zeros([ms, m])
+    for i in range(m):
+        for j in range(n):
+            output[:, i] += lfilter(matrix[i, j], [1], signal[:, j], axis = 0)
+        if diag != -1:
+            if isvec == True:
+                output[:, i] = lfilter([1], diag[i, 0], output[:, i], axis = 0)
+            else:
+                output[:, i] = lfilter([1], diag[i, i], output[:, i], axis = 0)
+    return output
+
+def sortmat(A):
+    """
+    Sorts a square matrix whose diagonal elements have been shifted to its first column,
+    such as:
+    A = [A11, A12, A13, A14]
+        [A22, A21, A23, A24]
+        [A33, A31, A32, A34]
+        [A44, A41, A42, A43]
+    The expected output for the function is
+    Ao =
+        [A11, A12, A13, A14]
+        [A21, A22, A23, A24]
+        [A31, A32, A33, A34]
+        [A41, A42, A43, A44]
+
+    Parameters
+    ----------
+    A : ndarray
+        Matrix to be sorted. Must have more than one row.
+    Returns
+    -------
+    Ao : ndarray
+        Sorted output.
+    """
+    Ao = copy(A)
+    m, _ = Ao.shape
+
+    if m > 1:
+        for i in range(1,m):
+            Ao[i,i] = Ao[i,0]
+            for j in range(0,i):
+                Ao[i,j] = A[i,j+1]
+    return Ao
+
 def fir(nb, nk, u, y):
     """
     This function estimates a FIR model based on the input-ouput data provided
@@ -121,6 +202,7 @@ def arx(na, nb, nk, u, y, opt=0):
                 ka += na[i,j]
     # Solve the Ls problem
     phi = concatenate((phiy, phiu), axis=1)
+    yo = copy(y)
     y = reshape(y[L:Ny, :], ((Ny-L)*ny, 1))
     theta, V, R = qrsol(phi, y)
     a = theta[0:da]
@@ -140,8 +222,14 @@ def arx(na, nb, nk, u, y, opt=0):
             ka += na[i, j]
     # Model
     m = polymodel('arx', A, B, None, None, None, nk, (u, y), nu, ny, 1)
-    m.setcov(V**2, V**2/Ny*dot(R, R.T), V**2/Ny)
-    return m 
+    e = filtmat(A, yo[L:Ny, :]) - filtmat(B, u[L:Nu, :])
+    sig = e.T @ e
+    if len(sig) == 1:
+        arg = sig * (R.T @ R)
+    else:
+        arg = -1 # phi.T @ inv(sig) @ phi
+    m.setcov(V**2/Ny, inv(arg), sig)
+    return m
 
 def armax(na, nb, nc, nk, u, y):
     """
@@ -195,7 +283,8 @@ def armax(na, nb, nc, nk, u, y):
         B_ = []
         E = copy(y[:,i:i+1])
         # High order model
-        aho, bho = arx(50, [50,]*nu, [1,]*nu, u, y[:, i:i+1])
+        mho = arx(50, [50,]*nu, [1,]*nu, u, y[:, i:i+1])
+        aho, bho = mho.A, mho.B
         # Estimate of the prediction errors
         ehat = lfilter(aho[0][0], [1], y[:, i:i+1], axis=0)
         for j in range(0, nu):
@@ -206,7 +295,8 @@ def armax(na, nb, nc, nk, u, y):
         # Inputs
         inps = concatenate((y[:, index], u, ehat), axis=1)
         nkk = array(append([1, ]*len(na[i, index]), append(nk[i, :], 1)), ndmin=2, dtype='int')
-        A_, BAC = arx([na[i, i]], array(append(na[i, index] - 1, append(nb[i, :], nc[i]-1)), ndmin=2), nkk, inps, y[:, i:i+1])
+        m_ = arx([na[i, i]], array(append(na[i, index] - 1, append(nb[i, :], nc[i]-1)), ndmin=2), nkk, inps, y[:, i:i+1])
+        A_, BAC = m_.A, m_.B
         thetai = A_[0][0][1:]
         for k in range(len(nkk[0])):
             thetai = append(thetai, BAC[0][k][nkk[0][k]:])
