@@ -138,8 +138,6 @@ def fir(nb, nk, u, y):
     phi = copy(phiu)
     y = reshape(y[L:Ny, :], ((Ny-L)*ny, 1))
     theta, V, R = qrsol(phi, y)
-    ehat = y - dot(theta, R)
-    Lam = 1/Ny*dot(ehat, ehat.T)
     b = theta[0:]
     # Output
     B = empty((ny, nu), dtype='object')
@@ -150,8 +148,20 @@ def fir(nb, nk, u, y):
             k += nb[i,j] + 1
     # Model
     m = polymodel('fir', None, B, None, None, None, nk, (u, y), nu, ny, 1)
-    # Set covariance
-    m.setcov(V**2, dot(R, R.T)/Ny, V**2)
+    # Estimate the noise
+    e = y - dot(phiu, theta.reshape((db, 1)))
+    # Reshape e
+    e = e.reshape(((Nu-L), ny))
+    # Get the noise covariace
+    sig = dot(e.T, e)
+    # Estimate the parameter covariance
+    isig = inv(sig)
+    M = zeros((db, db))
+    for k in range(0, phi.shape[0], ny):
+        M += phi[k:k+ny, :].T @ isig @ phi[k:k+ny, :]
+    M = M/Ny
+    # Set model parameters
+    m.setcov(V**2/Ny, inv(M), sig)
     return m
 
 def arx(na, nb, nk, u, y, opt=0):
