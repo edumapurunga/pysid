@@ -153,7 +153,7 @@ def fir(nb, nk, u, y):
     # Reshape e
     e = e.reshape(((Nu-L), ny))
     # Get the noise covariace
-    sig = dot(e.T, e)
+    sig = dot(e.T, e)/Ny
     # Estimate the parameter covariance
     isig = inv(sig)
     M = zeros((db, db))
@@ -161,7 +161,7 @@ def fir(nb, nk, u, y):
         M += phi[k:k+ny, :].T @ isig @ phi[k:k+ny, :]
     M = M/Ny
     # Set model parameters
-    m.setcov(V**2/Ny, inv(M), sig)
+    m.setcov(V**2/Ny, inv(M)/Ny, sig)
     return m
 
 def arx(na, nb, nk, u, y, opt=0):
@@ -233,13 +233,13 @@ def arx(na, nb, nk, u, y, opt=0):
     # Model
     m = polymodel('arx', A, B, None, None, None, nk, da+db, (u, y), nu, ny, 1)
     e = filtmat(A, yo[L:Ny, 0:ny]) - filtmat(B, u[L:Nu, 0:nu])
-    sig = e.T @ e
+    sig = (e.T @ e)/Ny
     isig = inv(sig)
     M = zeros((da + db, da + db))
     for k in range(0, phi.shape[0], ny):
         M += phi[k:k+ny, :].T @ isig @ phi[k:k+ny, :]
     M /= Ny # phi.T @ inv(sig) @ phi
-    m.setcov(V**2/Ny, inv(M), sig)
+    m.setcov(V**2/Ny, inv(M)/Ny, sig)
     return m
 
 def armax(na, nb, nc, nk, u, y):
