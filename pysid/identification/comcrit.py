@@ -90,4 +90,6 @@ def aicarx(na_max, nb_max, nk_max, u, y, criterion='aicn'):
     min_index = where(J_aic == amin(J_aic))
 
     m = m_aic[min_index][0]
-    return m
+    J_aic = J_aic[min_index][0]
+
+    return m, J_aic
