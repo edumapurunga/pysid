@@ -3,7 +3,7 @@
 """
 #%%
 # Imports
-
+from numpy import log
 # Classes
 class polymodel():
     """
@@ -12,14 +12,15 @@ class polymodel():
     """
 
     # Initialization
-    def __init__(self, name, A, B, C, D, F, d, data, nu, ny, ts):
+    def __init__(self, name, A, B, C, D, F, delay, nparam, data, nu, ny, ts):
         self.name = name
         self.A = A
         self.B = B
         self.C = C
         self.D = D
         self.F = F
-        self.d = d
+        self.delay = delay
+        self.nparam = nparam
         self.data = data
         self.nu = nu
         self.ny = ny
@@ -35,7 +36,7 @@ class polymodel():
     def __repr__(self):
         polymodelname = type(self).__name__
         s = '{}({!r}, {!r}, {!r}, {!r}, {!r}, {!r}, {!r}, {!r}, {!r}, {!r}, {!r})'\
-            .format(polymodelname, self.name, self.A, self.B, self.C, self.D, self.F, self.d, 'data', self.nu, self.ny, self.ts)
+            .format(polymodelname, self.name, self.A, self.B, self.C, self.D, self.F, self.delay, 'data', self.nu, self.ny, self.ts)
         return s
 
     def __str__(self):
@@ -53,6 +54,36 @@ class polymodel():
         self.P = accuracy
         self.ecov = ncov
         self.costfunction = V
+
+    def setaic(self, J=None, N=None, p=None):
+        """Sets the AIC criterion"""
+        if J is None:
+            J = self.costfunction
+        if N is None:
+            N = len(self.data[0])
+        if p is None:
+            p = self.nparam
+        self.Jaic = N*log(J) + 2*p
+
+    def setaicn(self, J=None, N=None, p=None):
+        """Sets the normalized AIC criterion"""
+        if J is None:
+            J = self.costfunction
+        if N is None:
+            N = len(self.data[0])
+        if p is None:
+            p = self.nparam
+        self.Jaicn = log(J) + 2*p/N
+
+    def setaicc(self, J=None, N=None, p=None):
+        """Sets the corrected AIC criterion"""
+        if J is None:
+            J = self.costfunction
+        if N is None:
+            N = len(self.data[0])
+        if p is None:
+            p = self.nparam
+        self.Jaicc =  N*log(J) + 2*p + 2*p*(p + 1)/(N - p - 1)
 
     def gen_poly_string(self, P, dim, name):
         """
@@ -150,7 +181,7 @@ class polymodel():
 
         model_str = model_str + "\nMODEL PROPERTIES:"
         model_str = model_str + "\nSample time: " + str(self.ts)
-        model_str = model_str + "\nTime delay:\n" + str(self.d)
+        model_str = model_str + "\nTime delay:\n" + str(self.delay)
 
         # TODO: Define setcov() parameters for all pemethod.py functions
         if self.ecov != -1:

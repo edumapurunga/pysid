@@ -147,7 +147,7 @@ def fir(nb, nk, u, y):
             B[i, j] = append(zeros((1, nk[i, j])), b[k:k+nb[i, j]+1])
             k += nb[i,j] + 1
     # Model
-    m = polymodel('fir', None, B, None, None, None, nk, (u, y), nu, ny, 1)
+    m = polymodel('fir', None, B, None, None, None, nk, db, (u, y), nu, ny, 1)
     # Estimate the noise
     e = y - dot(phiu, theta.reshape((db, 1)))
     # Reshape e
@@ -231,7 +231,7 @@ def arx(na, nb, nk, u, y, opt=0):
                 A[i, j] = append([0], a[ka:ka+na[i,j]])
             ka += na[i, j]
     # Model
-    m = polymodel('arx', A, B, None, None, None, nk, (u, y), nu, ny, 1)
+    m = polymodel('arx', A, B, None, None, None, nk, da+db, (u, y), nu, ny, 1)
     e = filtmat(A, yo[L:Ny, 0:ny]) - filtmat(B, u[L:Nu, 0:nu])
     sig = e.T @ e
     isig = inv(sig)
@@ -265,6 +265,9 @@ def armax(na, nb, nc, nk, u, y):
     #Input Handling
     Nu, nu = shape(u)
     Ny, ny = shape(y)
+    da = sum(sum(na))
+    db = sum(sum(nb+1))
+    dc = sum(sum(nc))
     # Define the prediction error
     def pe(theta, na, nb, nc, nk, u, y):
         Ny, ny = shape(y)
@@ -331,7 +334,7 @@ def armax(na, nb, nc, nk, u, y):
                 A[i, j] = append([0], theta[k:k+na[i, j]])
             k += na[i, j]
         # Model
-        m = polymodel('armax', A, B, C, None, None, nk, (u, y), nu, ny, 1)
+        m = polymodel('armax', A, B, C, None, None, nk, da+db+dc, (u, y), nu, ny, 1)
     return m
 
 def oe(nb, nf, nk, u, y):
@@ -355,6 +358,8 @@ def oe(nb, nf, nk, u, y):
     # Input Handling
     Nu, nu = shape(u)
     Ny, ny = shape(y)
+    db = sum(sum(nb+1))
+    df = sum(sum(nf))
     # Define the prediction error
     def pe(theta, nf, nb, nk, u, y):
         Nu, nu = shape(u)
@@ -405,7 +410,7 @@ def oe(nb, nf, nk, u, y):
             F[j, i] = append([1], f[kf:kf+nf[j, i]])
             kf += nf[j, i]
             kb += nb[j, i] + 1
-        m = polymodel('oe', None, B, None, None, F, nk, (u, y), nu, ny, 1)
+        m = polymodel('oe', None, B, None, None, F, nk, db+df, (u, y), nu, ny, 1)
     return m
 
 def bj(nb, nc, nd, nf, nk, u, y):
@@ -432,6 +437,10 @@ def bj(nb, nc, nd, nf, nk, u, y):
     # Input Handling
     Nu, nu = shape(u)
     Ny, ny = shape(y)
+    db = sum(sum(nb+1))
+    dc = sum(sum(nc))
+    dd = sum(sum(nd))
+    df = sum(sum(nf))
     # Number of parameters do estimate
     #dp = nf + nb + nc + nd + 1
     # Define the prediction error
@@ -505,7 +514,7 @@ def bj(nb, nc, nd, nf, nk, u, y):
             kf += nf[j, i]
             kb += nb[j, i] + 1
         # Model
-        m = polymodel('boxjenkins', None, B, C, D, F, nk, (u, y), nu, ny, 1)
+        m = polymodel('boxjenkins', None, B, C, D, F, nk, db+dc+dd+df, (u, y), nu, ny, 1)
     return m
 
 # %% Testing functions
@@ -542,6 +551,11 @@ def pem(A, B, C, D, F, u, y, mu=[] ,solver='lm'):
     #Input Handling
     Ny, ny = shape(y)
     Nu, nu = shape(u)
+    da = sum(sum(na))
+    db = sum(sum(nb+1))
+    dc = sum(sum(nc))
+    dd = sum(sum(nd))
+    df = sum(sum(nf))
     #Empty mask
     mu = array(mu)
     if size(mu) == 0:
