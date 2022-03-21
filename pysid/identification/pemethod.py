@@ -153,7 +153,7 @@ def fir(nb, nk, u, y):
     # Reshape e
     e = e.reshape(((Nu-L), ny))
     # Get the noise covariace
-    sig = dot(e.T, e)
+    sig = dot(e.T, e)/Ny
     # Estimate the parameter covariance
     isig = inv(sig)
     M = zeros((db, db))
@@ -161,7 +161,7 @@ def fir(nb, nk, u, y):
         M += phi[k:k+ny, :].T @ isig @ phi[k:k+ny, :]
     M = M/Ny
     # Set model parameters
-    m.setcov(V**2/Ny, inv(M), sig)
+    m.setcov(V**2/Ny, inv(M)/Ny, sig)
     return m
 
 def arx(na, nb, nk, u, y, opt=0):
