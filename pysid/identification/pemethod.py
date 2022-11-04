@@ -291,7 +291,7 @@ def armax(na, nb, nc, nk, u, y):
     # Initial Guess
     A = empty((ny, ny), dtype=object)
     B = empty((ny, nu), dtype=object)
-    C = empty((ny,), dtype = object)
+    C = empty((ny, 1), dtype = object)
     for i in range(0, ny):
         A_ = []
         B_ = []
@@ -321,7 +321,7 @@ def armax(na, nb, nc, nk, u, y):
         NA = concatenate((tarna, na[i][index]))
         sol = least_squares(pe, thetai, args=(NA, nb[i], nc[i], nk[i], u.reshape(Nu, nu), Y.reshape((Ny, ny))))
         theta = sol.x
-        C[i] = append([1], theta[sum(na[i])+sum(nb[i]+1):sum(na[i])+sum(nb[i]+1)+sum(nc[i])+1])
+        C[i,0] = append([1], theta[sum(na[i])+sum(nb[i]+1):sum(na[i])+sum(nb[i]+1)+sum(nc[i])+1])
         k = sum(na[i])
         for j in range(0, nu):
             B[i, j] = append(zeros((1, nk[i,j])), theta[k:k+nb[i, j]+1])
