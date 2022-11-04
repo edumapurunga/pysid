@@ -35,10 +35,12 @@ def poly_to_str(P,prec=3):
             for coef in poly:
                 if coef != 0:
                     if first_elem == True:
-                        # Appending the first element (without the sum sign in front)
-                        if power == 0:
+                       # Appending the first element (without the sum sign in front)
+                        if power == 0 and coef==1:
                             # For monic polynomials
                             aux = aux + str(1)
+                        elif power == 0 and coef!=1:
+                            aux = aux + coef_to_str(coef,prec)
                         else:
                             # For non-monic polynomials
                             aux = aux + coef_to_str(coef,prec) + "q^{" + "{0}".format(-power) + "}"
