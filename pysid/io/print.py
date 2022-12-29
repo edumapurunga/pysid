@@ -1,8 +1,10 @@
 from IPython.display import display, Math
+from shutil import which
 
 def coef_to_str(c,prec=3):
     """Converts a float coefficient (c) into a string, with precision given by prec."""
-    return "{:.{precision}f}".format(c, precision = prec)
+    return "{:.{precision}g}".format(c, precision = prec)
+
 
 def poly_to_str(P,prec=3):
     """
@@ -79,7 +81,7 @@ def matrix_to_str(matrix,prec=3):
 
     """
     m,n = matrix.shape
-
+    #if which('latex') is not None:
     label = r"\begin{bmatrix}"
     for row in range(m):
         for col in range(n):
@@ -92,6 +94,17 @@ def matrix_to_str(matrix,prec=3):
     label = label + "\end{bmatrix}"
     return label
 
+def print_matrix(matrix,prec):
+    m,n = matrix.shape
+    for row in range(m):
+        print("|",end="")
+        for col in range(n):
+            if matrix[row][col] > 0:
+                print(" "+coef_to_str(matrix[row][col],prec=prec),end="\t")
+            else:
+                print(coef_to_str(matrix[row][col],prec=prec),end="\t" )
+        print("|")
+                
 def print_poly(P,dim,name,prec=3):
     """
     Prints a MIMO polynomial model.
@@ -115,20 +128,39 @@ def print_poly(P,dim,name,prec=3):
     s = poly_to_str(P,prec)
     rows, cols = dim[0], dim[1]
     index = 0
-    for row in range(rows):
-        for col in range(cols):
-            if rows == 1 and cols == 1:
-                # Prints SISO subcase
-                display(Math(r'' + name + '(q^{-1}) = ' + s[index]))
-            else:
-                if name == "C" or name == "D":
-                    poly_index = "{" + str(row+1) + "}"
-                    display(Math(r'' + name + "_" + poly_index + '(q^{-1}) = ' + s[index]))
+    #print(which('latex'))
+    if which('latex') is not None:
+        for row in range(rows):
+            for col in range(cols):
+                if rows == 1 and cols == 1:
+                    # Prints SISO subcase
+                    display(Math(r'' + name + '(q^{-1}) = ' + s[index]))
                 else:
-                    # Prints general MIMO case
-                    poly_index = "{" + str(row+1) + str(col+1) + "}"
-                    display(Math(r'' + name + "_" + poly_index + '(q^{-1}) = ' + s[index]))
-            index = index + 1
+                    if name == "C" or name == "D":
+                        poly_index = "{" + str(row+1) + "}"
+                        display(Math(r'' + name + "_" + poly_index + '(q^{-1}) = ' + s[index]))
+                    else:
+                        # Prints general MIMO case
+                        poly_index = "{" + str(row+1) + str(col+1) + "}"
+                        display(Math(r'' + name + "_" + poly_index + '(q^{-1}) = ' + s[index]))
+                index = index + 1
+    else:
+        for row in range(rows):
+            for col in range(cols):
+                if rows == 1 and cols == 1:
+                    # Prints SISO subcase
+                    print(r'' + name + '(q^{-1}) = ' + s[index])
+                else:
+                    if name == "C" or name == "D":
+                        poly_index = str(row+1)
+                        print(r'' + name + poly_index + ' (q^{-1}) = ' + s[index])
+                    else:
+                        # Prints general MIMO case
+                        poly_index = str(row+1) + str(col+1)
+                        print(r'' + name + poly_index + ' (q^{-1}) = ' + s[index])
+                index = index + 1
+    print("\n")
+
 
 def print_model(model,prec=3,names=['A','B','C','D','F']):
     """
@@ -160,4 +192,7 @@ def print_model(model,prec=3,names=['A','B','C','D','F']):
 
     if hasattr(model, 'P'):
         print(f'Accuracy:')
-        display(Math(matrix_to_str(model.P,prec)))
+        if which('latex') is not None:
+            display(Math(matrix_to_str(model.P,prec)))
+        else:
+            print_matrix(model.P,prec)
