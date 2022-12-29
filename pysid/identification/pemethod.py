@@ -6,13 +6,13 @@
 from numpy import arange, atleast_2d, asarray, array, append, asscalar, copy, count_nonzero, ones,\
 delete, dot, empty, sum, size, amax, matrix, concatenate, shape, zeros, kron,\
 eye, reshape, convolve, sqrt, where, nonzero, correlate, equal, ndarray, pi, \
-absolute, exp, log, real, issubdtype, integer, expand_dims
+absolute, exp, log, real, issubdtype, integer, expand_dims, insert, power, matmul
 from scipy.linalg import qr, solve, toeplitz, inv
 from numpy.linalg import matrix_rank
 from scipy.signal import lfilter, periodogram
 from scipy.optimize import leastsq, least_squares
 from .tseries import arma
-from .solvers import ls, qrsol
+from .solvers import ls, qrsol, qrsolm
 from ..io.check import chckin
 from .models import polymodel
 import numpy.fft as fft
