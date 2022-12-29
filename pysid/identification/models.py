@@ -27,7 +27,7 @@ class polymodel():
         self.ts = ts
 
         # TODO: Ensure that setcov() is always called in pemethod.py
-        self.ecov = -1
+        self.ecov = None
 
     # Iterable
     def __iter__(self):
@@ -172,7 +172,7 @@ class polymodel():
             mask[0] = mask[1] = mask[2] = mask[3] = mask[4] = True
         else:
             raise ValueError('Invalid model name.')
-
+        
         index = 0
         for poly in self:
             if mask[index]:
@@ -184,7 +184,7 @@ class polymodel():
         model_str = model_str + "\nTime delay:\n" + str(self.delay)
 
         # TODO: Define setcov() parameters for all pemethod.py functions
-        if self.ecov != -1:
+        if self.ecov.any() is not None:
             model_str = model_str + "\n\necov: " + str(self.ecov)
             model_str = model_str + "\nCost function per sample: " + str(self.costfunction)
             model_str = model_str + "\n\nAccuracy:\n" + str(self.P)
