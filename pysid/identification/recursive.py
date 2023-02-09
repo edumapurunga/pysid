@@ -8,7 +8,7 @@ from numpy import zeros, identity, matmul, empty, insert, concatenate, power
 from .models import polymodel
 from .solvers import qrsolm
 
-__all__ = ['emq', 'mqr']
+__all__ = ['els', 'mqr']
 
 def var_erro(error, th = 0.001):
     """
@@ -36,10 +36,10 @@ def var_erro(error, th = 0.001):
     else:
         return True
 
-def emq(na,nb,nc,nk,u,y,th = 0.001,n_max = 100):
+def els(na,nb,nc,nk,u,y,th = 0.001,n_max = 100):
     """
     
-    Performs the extended least squres algorithm on u,y data,
+    Performs the Extended Least Squres algorithm on u,y data,
     indentifing A,B and C polynomials with na,nb and nc degree respectively.
     
     **The version takes presuposses that the order of every polynomial (in not siso cases)
@@ -176,12 +176,14 @@ def emq(na,nb,nc,nk,u,y,th = 0.001,n_max = 100):
 
     return m
 
-def mqr(na,nb,nk,u,y):
+def rls(na,nb,nk,u,y):
     """
+    Performs the Recursive Least Squres algorithm on u,y data,
+    indentifing A,B and C polynomials with na,nb and nc degree respectively.
+
+    **Only implemented for SISO cases
 
     Parameters
-    ----------
-  Parameters
     ----------
     na : int
         Degree of A polynomial
@@ -196,7 +198,7 @@ def mqr(na,nb,nk,u,y):
 
     Returns
     -------
-    None. (will return the polymodel)
+    m : pysid polymodel
 
     """
     ny = y.shape[1]
