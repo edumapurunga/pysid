@@ -35,8 +35,8 @@ def var_erro(error, th = 0.001):
         return False
     else:
         return True
-    
-def emq(na,nb,nc,nk,u,y,th,n_max):
+
+def emq(na,nb,nc,nk,u,y,th = 0.001,n_max = 100):
     """
     
     Performs the extended least squres algorithm on u,y data,
@@ -72,11 +72,11 @@ def emq(na,nb,nc,nk,u,y,th,n_max):
     """
     nu = u.shape[1]
     ny = y.shape[1]
-    
+
     nbk = nb+nk
-    
+
     w = max(na,nbk,nc)
-    
+
     y_sol = y[w:] #output used for theta in solving the linear problem
     u_reg = zeros([u.shape[0]-w,nu*(nb+1)])
     cont = 0
@@ -93,12 +93,12 @@ def emq(na,nb,nc,nk,u,y,th,n_max):
             y_reg[:,cont] = -y[w-na+i:y.shape[0]-na+i,c]
             cont = cont + 1 
     psi = concatenate((u_reg,y_reg),axis=1)
-    
+
     #Standard LS : theta = pseudo_inverse(psi) * y
     theta_mq = qrsolm(psi,y_sol)
-    
+
     #make psi_emq (first time)
-    
+
     psi_emq = zeros((y_sol.shape[0]-nc,psi.shape[1]+nc,ny))
     res = y_sol - matmul(psi,theta_mq)
     #Agora cada saida tem seu próprio regressor, já que os residuos são diferentes
@@ -108,15 +108,15 @@ def emq(na,nb,nc,nk,u,y,th,n_max):
         for j in range(nc):
             res_i = res[j:-nc+j,i]
             psi_emq[:,psi_emq.shape[1]-nc+j,i] = res_i
-    
-    
+
+
     #first theta_emq
     theta_emq = zeros((psi_emq.shape[1],ny))
     
     #it is necessary to get the right theta, which was calculated with the residue of the corresponding output
     for i in range(ny):
         theta_emq[:,i] = qrsolm(psi_emq[:,:,i],y_sol[nc:,:])[:,i]
-    
+
     #Iteractions
     res = zeros((psi_emq.shape[0],nc))
     res_i = zeros((res.shape[0]))
@@ -130,23 +130,23 @@ def emq(na,nb,nc,nk,u,y,th,n_max):
                 res_i[:-nc+n] = res[nc-n:,j]
                 psi_emq[:,-nc+n,j] = res_i
             theta_emq[:,j] = qrsolm(psi_emq[:,:,j],y_sol[nc:,:])[:,j]
-        
+
         s_error[1,:] = s_error[0,:]
         for ii in range(ny):
             s_error[0,ii] = sum(power(res,2)[:,ii])
-            
+
         i = i + 1
-        
+
     #Assembly of matrices of polynomials
     A = empty((ny,ny), dtype='object')
     B = empty((ny,nu), dtype='object')
     C = empty((ny,1),  dtype='object')
-    
+
     nbp = nb+1
-    
+
     #Fill each element of B with zeros referring to nk
     # If nk = 3, B must be [0 0 bo b1 b2]
-    
+
     for c in range(ny):
         for i in range(nu):
             if i == 0:
@@ -154,7 +154,7 @@ def emq(na,nb,nc,nk,u,y,th,n_max):
             else:
                 B[c,i] = theta_emq[i*(nbp-1)+nbp:(nbp-1)*i:-1,c]
             B[c,i] = insert(B[c,i],0,zeros((nk))) #fill with zeros
-            
+
     for c in range(ny):
         for i in range(nu):
             if i == 0:
@@ -165,11 +165,11 @@ def emq(na,nb,nc,nk,u,y,th,n_max):
                 A[c,i] = insert(A[c,i],0,1)
             else:
                 A[c,i] = insert(A[c,i],0,0)
-    
+
     for c in range(ny):
         C[c,0] = theta_emq[:(nbp*nu)+(na*ny)-1:-1,c].reshape((1,nc))
         C[c,0] = insert(C[c,0],0,1)
-    
+
     #create de object 
     n_params = theta_emq.shape[0]*theta_emq.shape[1]
     m = polymodel('armax',A,B,C,None,None,nk,n_params+1,(u,y),nu,ny,1)
@@ -201,18 +201,18 @@ def mqr(na,nb,nk,u,y):
     """
     ny = y.shape[1]
     nu = u.shape[1]
-    
+
     n_params = na+(nb+1)
     w = max(na,nb+nk)
     nb = nb+1 
-    
+
     theta = zeros([n_params,ny])
     P = identity(n_params)*1e5 # mimo case will have a pk for each output
-    
+
     # first data I put manually to avoid an if in the for
     u=u[w:,:]
     y=y[w:,:]
-    
+
     cont = w
     psik = zeros((1,n_params))
     for i in range(y.shape[0]-w):
@@ -226,15 +226,15 @@ def mqr(na,nb,nk,u,y):
         theta = theta + K*(y[cont]-matmul(psik,theta))
         P = P - K*(matmul(psik,P))
         cont = cont + 1
-        
+
     #Assembly of matrices of polynomials 
     A = empty((ny,ny), dtype='object')
     B = empty((ny,nu), dtype='object')
-    
+
     nbp = nb+1
     #Fill each element of B with zeros referring to nk
     # If nk = 3, B must be [0 0 bo b1 b2]
-    
+
     for c in range(ny):
         for i in range(nu):
             if i == 0:
@@ -242,7 +242,7 @@ def mqr(na,nb,nk,u,y):
             else:
                 B[c,i] = theta[i*(nbp-1)+nbp:(nbp-1)*i:-1,c]
             B[c,i] = insert(B[c,i],0,zeros((nk))) #fill with zeros
-            
+
     for c in range(ny):
         for i in range(nu):
             if i == 0:
@@ -253,9 +253,9 @@ def mqr(na,nb,nk,u,y):
                 A[c,i] = insert(A[c,i],0,1)
             else:
                 A[c,i] = insert(A[c,i],0,0)
-    
+
     #Create the object
     n_params = theta.shape[0]*theta.shape[1]
     m = polymodel('arx',A,B,None,None,None,nk,n_params+1,(u,y),nu,ny,1)
-    
+
     return m
