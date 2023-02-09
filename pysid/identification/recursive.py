@@ -8,6 +8,8 @@ from numpy import zeros, identity, matmul, empty, insert, concatenate, power
 from .models import polymodel
 from .solvers import qrsolm
 
+__all__ = ['emq', 'mqr']
+
 def var_erro(error, th = 0.001):
     """
     
@@ -25,7 +27,7 @@ def var_erro(error, th = 0.001):
     bool.
 
     """
-    #Caso o erro tenha variado menos que th entre as iterações, retorna False e sai do while
+    #If the error has varied less than th between iterations, it returns False and exits the while
     if error[0,0] != 0 :
         for i in range(error.shape[1]):
             if (abs((error[0,i] - error[1,i])/error[0,i])) > th :
@@ -74,15 +76,14 @@ def emq(na,nb,nc,nk,u,y,th,n_max):
     nbk = nb+nk
     
     w = max(na,nbk,nc)
-    # psi = zeros([y.shape[0]-w,nu*(nb+1)+ny*na])
     
-    y_sol = y[w:] #saida usada para theta resoluçaõ do problema linear
+    y_sol = y[w:] #output used for theta in solving the linear problem
     u_reg = zeros([u.shape[0]-w,nu*(nb+1)])
     cont = 0
-    # nb quantos atrasos vou olhar
-    # nk onde eu começo a olhar(-1, -2, -3,...)
-    for c in range(nu): #para cada entrada
-        for i in range((nb+1)): #u no regressor vai de u[k-nk] até u[k-nb-nk+1]
+    # nb number of prior samples that will be looked
+    # nk were I start to look(-1, -2, -3,...)
+    for c in range(nu): #for each input
+        for i in range((nb+1)): #u on psi goes from u[k-nk] to u[k-nb-nk+1]
             u_reg[:,cont] = u[w-nbk+i:u.shape[0]-nbk+i,c]
             cont = cont + 1
     cont = 0
@@ -93,14 +94,15 @@ def emq(na,nb,nc,nk,u,y,th,n_max):
             cont = cont + 1 
     psi = concatenate((u_reg,y_reg),axis=1)
     
-    #MQ padrão : theta = pseudo_inversa(psi) * y
+    #Standard LS : theta = pseudo_inverse(psi) * y
     theta_mq = qrsolm(psi,y_sol)
     
-    # montar psi_emq (1° vez)
+    #make psi_emq (first time)
     
     psi_emq = zeros((y_sol.shape[0]-nc,psi.shape[1]+nc,ny))
     res = y_sol - matmul(psi,theta_mq)
     #Agora cada saida tem seu próprio regressor, já que os residuos são diferentes
+    #Now each output has its own regressor, since the residuals are different.
     for i in range(ny):
         psi_emq[:,:psi.shape[1],i] = psi[nc:,:]
         for j in range(nc):
@@ -108,23 +110,23 @@ def emq(na,nb,nc,nk,u,y,th,n_max):
             psi_emq[:,psi_emq.shape[1]-nc+j,i] = res_i
     
     
-    #Primeiro theta_emq
+    #first theta_emq
     theta_emq = zeros((psi_emq.shape[1],ny))
     
-    #é preciso pegar o theta certo, o que foi calculado com o residuo da saida correspondente
+    #it is necessary to get the right theta, which was calculated with the residue of the corresponding output
     for i in range(ny):
         theta_emq[:,i] = qrsolm(psi_emq[:,:,i],y_sol[nc:,:])[:,i]
     
-    #Iterações
+    #Iteractions
     res = zeros((psi_emq.shape[0],nc))
     res_i = zeros((res.shape[0]))
-    s_error = zeros((2,ny)) #uma linha pro erro passado e uma pro atual
+    s_error = zeros((2,ny)) #one line for past error and one for current error
     n_iteracoes = n_max
     i = 0
     while (var_erro(s_error) and i<n_iteracoes):
-        for j in range(ny): #para cada psi
-            res = (y_sol[nc:] - matmul(psi_emq[:,:,j],theta_emq[:,:])) #cada j tem o residuo para ir em um regressor
-            for n in range(nc): #adição do residuo em psi_emq
+        for j in range(ny): #for each psi
+            res = (y_sol[nc:] - matmul(psi_emq[:,:,j],theta_emq[:,:])) #each j has the residual to go in a regressor
+            for n in range(nc): #addition of residue in psi_emq
                 res_i[:-nc+n] = res[nc-n:,j]
                 psi_emq[:,-nc+n,j] = res_i
             theta_emq[:,j] = qrsolm(psi_emq[:,:,j],y_sol[nc:,:])[:,j]
@@ -135,15 +137,15 @@ def emq(na,nb,nc,nk,u,y,th,n_max):
             
         i = i + 1
         
-    #Montagem das matrizes de polinomios 
+    #Assembly of matrices of polynomials
     A = empty((ny,ny), dtype='object')
     B = empty((ny,nu), dtype='object')
     C = empty((ny,1),  dtype='object')
     
     nbp = nb+1
     
-    #Preencher o cada elemento de B com zeros referentes a nk
-    # Se nk é 3 B deve ser [0 0 bo b1 b2]
+    #Fill each element of B with zeros referring to nk
+    # If nk = 3, B must be [0 0 bo b1 b2]
     
     for c in range(ny):
         for i in range(nu):
@@ -151,7 +153,7 @@ def emq(na,nb,nc,nk,u,y,th,n_max):
                 B[c,i] = theta_emq[i*(nbp)-1+nbp::-1,c]
             else:
                 B[c,i] = theta_emq[i*(nbp-1)+nbp:(nbp-1)*i:-1,c]
-            B[c,i] = insert(B[c,i],0,zeros((nk))) #coloca zeros no começo
+            B[c,i] = insert(B[c,i],0,zeros((nk))) #fill with zeros
             
     for c in range(ny):
         for i in range(nu):
@@ -168,7 +170,7 @@ def emq(na,nb,nc,nk,u,y,th,n_max):
         C[c,0] = theta_emq[:(nbp*nu)+(na*ny)-1:-1,c].reshape((1,nc))
         C[c,0] = insert(C[c,0],0,1)
     
-    #Crianção do objeto 
+    #create de object 
     n_params = theta_emq.shape[0]*theta_emq.shape[1]
     m = polymodel('armax',A,B,C,None,None,nk,n_params+1,(u,y),nu,ny,1)
 
@@ -204,10 +206,10 @@ def mqr(na,nb,nk,u,y):
     w = max(na,nb+nk)
     nb = nb+1 
     
-    theta = zeros([n_params,ny]) #ja adequado ao mimo
-    P = identity(n_params)*1e5 #caso mimo tera uma pk pra cada saida 
+    theta = zeros([n_params,ny])
+    P = identity(n_params)*1e5 # mimo case will have a pk for each output
     
-    #primeiros dados coloco manulmente para evitar um if no laço 
+    # first data I put manually to avoid an if in the for
     u=u[w:,:]
     y=y[w:,:]
     
@@ -218,27 +220,20 @@ def mqr(na,nb,nk,u,y):
             psik[0,:nb-1] = psik[0,1:nb]
         psik[0,nb-1] = u[cont-nk]
         for j in range(ny):
-            psik[0,nb:nb+na-1] =  psik[0,nb+1:] #psi[cont-1,nb+1:]
+            psik[0,nb:nb+na-1] =  psik[0,nb+1:]
         psik[0,nb+na-1] = -y[cont-1]
         K = matmul(P,psik.transpose())/((matmul( psik,matmul(P,psik.transpose()) ) + 1)[0,0])
         theta = theta + K*(y[cont]-matmul(psik,theta))
-        #print(theta)
         P = P - K*(matmul(psik,P))
-        # print(psik,u[cont],y[cont])
         cont = cont + 1
         
-    
-    # print(theta)
-    
-    #Montagem das matrizes de polinomios 
+    #Assembly of matrices of polynomials 
     A = empty((ny,ny), dtype='object')
     B = empty((ny,nu), dtype='object')
-    #C = empty((ny,1),  dtype='object')
     
     nbp = nb+1
-    
-    #Preencher o cada elemento de B com zeros referentes a nk
-    # Se nk é 3 B deve ser [0 0 bo b1 b2]
+    #Fill each element of B with zeros referring to nk
+    # If nk = 3, B must be [0 0 bo b1 b2]
     
     for c in range(ny):
         for i in range(nu):
@@ -246,7 +241,7 @@ def mqr(na,nb,nk,u,y):
                 B[c,i] = theta[nbp-2::-1,c]
             else:
                 B[c,i] = theta[i*(nbp-1)+nbp:(nbp-1)*i:-1,c]
-            B[c,i] = insert(B[c,i],0,zeros((nk))) #coloca zeros no começo
+            B[c,i] = insert(B[c,i],0,zeros((nk))) #fill with zeros
             
     for c in range(ny):
         for i in range(nu):
@@ -259,7 +254,7 @@ def mqr(na,nb,nk,u,y):
             else:
                 A[c,i] = insert(A[c,i],0,0)
     
-    #Crianção do objeto 
+    #Create the object
     n_params = theta.shape[0]*theta.shape[1]
     m = polymodel('arx',A,B,None,None,None,nk,n_params+1,(u,y),nu,ny,1)
     
