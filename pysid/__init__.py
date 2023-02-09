@@ -15,3 +15,4 @@ name = "pysid"
 from pysid.identification import *
 from pysid.correlation import *
 from pysid.io import *
+from pysid.interface import *
