@@ -3,7 +3,7 @@
 """
 
 # Imports
-from numpy import arange, atleast_2d, asarray, array, append, asscalar, copy, count_nonzero, ones,\
+from numpy import arange, atleast_2d, asarray, array, append, copy, count_nonzero, ones,\
 delete, dot, empty, sum, size, amax, matrix, concatenate, shape, zeros, kron,\
 eye, reshape, convolve, sqrt, where, nonzero, correlate, equal, ndarray, pi, \
 absolute, exp, log, real, issubdtype, integer, expand_dims, insert, power, matmul
