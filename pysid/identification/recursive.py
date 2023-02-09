@@ -8,7 +8,7 @@ from numpy import zeros, identity, matmul, empty, insert, concatenate, power
 from .models import polymodel
 from .solvers import qrsolm
 
-__all__ = ['els', 'mqr']
+__all__ = ['els', 'rls']
 
 def var_erro(error, th = 0.001):
     """
