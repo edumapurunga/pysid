@@ -3,16 +3,16 @@
 """
 
 # Imports
-from numpy import arange, atleast_2d, asarray, array, append, asscalar, copy, count_nonzero, ones,\
+from numpy import arange, atleast_2d, asarray, array, append, copy, count_nonzero, ones,\
 delete, dot, empty, sum, size, amax, matrix, concatenate, shape, zeros, kron,\
 eye, reshape, convolve, sqrt, where, nonzero, correlate, equal, ndarray, pi, \
-absolute, exp, log, real, issubdtype, integer, expand_dims
+absolute, exp, log, real, issubdtype, integer, expand_dims, insert, power, matmul
 from scipy.linalg import qr, solve, toeplitz, inv
 from numpy.linalg import matrix_rank
 from scipy.signal import lfilter, periodogram
 from scipy.optimize import leastsq, least_squares
 from .tseries import arma
-from .solvers import ls, qrsol
+from .solvers import ls, qrsol, qrsolm
 from ..io.check import chckin
 from .models import polymodel
 import numpy.fft as fft
@@ -291,7 +291,7 @@ def armax(na, nb, nc, nk, u, y):
     # Initial Guess
     A = empty((ny, ny), dtype=object)
     B = empty((ny, nu), dtype=object)
-    C = empty((ny,), dtype = object)
+    C = empty((ny, 1), dtype = object)
     for i in range(0, ny):
         A_ = []
         B_ = []
@@ -321,7 +321,7 @@ def armax(na, nb, nc, nk, u, y):
         NA = concatenate((tarna, na[i][index]))
         sol = least_squares(pe, thetai, args=(NA, nb[i], nc[i], nk[i], u.reshape(Nu, nu), Y.reshape((Ny, ny))))
         theta = sol.x
-        C[i] = append([1], theta[sum(na[i])+sum(nb[i]+1):sum(na[i])+sum(nb[i]+1)+sum(nc[i])+1])
+        C[i,0] = append([1], theta[sum(na[i])+sum(nb[i]+1):sum(na[i])+sum(nb[i]+1)+sum(nc[i])+1])
         k = sum(na[i])
         for j in range(0, nu):
             B[i, j] = append(zeros((1, nk[i,j])), theta[k:k+nb[i, j]+1])

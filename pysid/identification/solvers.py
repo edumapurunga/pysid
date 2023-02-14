@@ -66,6 +66,17 @@ def qrsol(A, B):
     V = R[d, d]
     theta = solve(R1, R2)
     return [theta, V, R1]
+
+def qrsolm(psi,y):
+    """
+    Solve the least saqures problem using QR-factorization but for mimo systems
+    """
+    ny = y.shape[1];
+    theta = zeros((psi.shape[1],ny))
+    for i in range(ny):
+        theta_i = qrsol(psi, y[:,i].reshape((y.shape[0],1)))[0]
+        theta[:,i] = theta_i
+    return theta
  
 def levinson(R, n):
     """
