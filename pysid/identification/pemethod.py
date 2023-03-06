@@ -232,7 +232,7 @@ def arx(na, nb, nk, u, y, opt=0):
             ka += na[i, j]
     # Model
     m = polymodel('arx', A, B, None, None, None, nk, da+db, (u, y), nu, ny, 1)
-    e = filtmat(A, yo[L:Ny, 0:ny]) - filtmat(B, u[L:Nu, 0:nu])
+    e = (filtmat(A, yo) - filtmat(B, u))[L:Ny, 0:ny]
     sig = (e.T @ e)/Ny
     isig = inv(sig)
     M = zeros((da + db, da + db))
