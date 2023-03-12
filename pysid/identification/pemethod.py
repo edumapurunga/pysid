@@ -449,6 +449,7 @@ def oe(nb, nf, nk, u, y):
     # Initialization
     B = empty((ny, nu), dtype=object)
     F = empty((ny, nu), dtype=object)
+    BdF = empty((ny, nu), dtype=object)
     for j in range(0, ny):
         A = []
         B_ = []
@@ -474,9 +475,49 @@ def oe(nb, nf, nk, u, y):
         for i in range(0, nu):
             B[j, i] = append(zeros((1, nk[j, i])), b[kb:kb+nb[j, i]+1])
             F[j, i] = append([1], f[kf:kf+nf[j, i]])
+            BdF[j, i] = (B[j, i], F[j, i])
             kf += nf[j, i]
             kb += nb[j, i] + 1
-        m = polymodel('oe', None, B, None, None, F, nk, db+df, (u, y), nu, ny, 1)
+    ehat = y - filtmat(BdF, u, isrational=True) #[L:Ny, 0:ny]
+    # Get covariance of ehat
+    sig = (ehat.T @ ehat)/Ny
+    # Inverse of sig
+    isig = inv(sig)
+    # Model
+    kb = 0
+    kf = 0
+    # Get covariance:
+    L = amax([amax(nf), amax(nb + nk)])
+    Iny = eye(ny)
+    psiy = zeros(((Ny-L)*ny, df))
+    psiu = zeros(((Nu-L)*ny, db))
+    # Output regressors and Input Regressors
+    for i in range(0, ny):
+        kw = 0
+        # Get filtered signals
+        uf = zeros((Ny, nu))
+        wf = zeros((Ny, nu))
+        # Input
+        for j in range(0, nu):
+            if (nb[i, j] > -1):
+                wf[:, kw] = lfilter(B[i, j], convolve(F[i, j], F[i, j]), u[:, j], axis=0)
+                uf[:, kw] = lfilter([1], F[i, j], u[:, j], axis=0)
+                psiu[:, kb:kb+nb[i, j]+1] = kron(toeplitz(uf[L-nk[i, j]:Nu-nk[i, j], j], uf[L-nk[i, j]-nb[i, j]:L-nk[i, j]+1, j][::-1]), Iny[:, i:i+1])
+                psiy[:, kf:kf+nf[i,j]] = kron(-toeplitz(wf[L-1:-1, kw], wf[L-nf[i, j]:L, kw][::-1]),Iny[:, i:i+1])
+                kb += nb[i, j] + 1
+                kf += nf[i,j]
+                kw += 1
+    # Get Model
+    m = polymodel('oe', None, B, None, None, F, nk, db+df, (u, y), nu, ny, 1)
+    psi = concatenate((psiu, psiy), axis=1)
+    # Get gradient of the prediction error
+    # Initialize information matrix
+    M = zeros((df + db, df + db))
+    for k in range(0, psi.shape[0], ny):
+        M += psi[k:k+ny, :].T @ isig @ psi[k:k+ny, :]
+    M /= Ny
+    m.setcov(sol, inv(M)/Ny, sig)
+
     return m
 
 def bj(nb, nc, nd, nf, nk, u, y):
