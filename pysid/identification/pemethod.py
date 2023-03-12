@@ -21,7 +21,7 @@ import numpy.fft as fft
 __all__ = ['fir', 'arx', 'armax', 'oe', 'bj', 'pem']
 
 # Implementation
-def filtmat(matrix, signal, diag=-1, isvec=True):
+def filtmat(matrix, signal, diag=-1, isvec=True, isrational=False):
     """
     Filters a set of input signals (x) through a matrix (M) of polynomials, such that:
         y(t) = M*x(t)
@@ -41,17 +41,21 @@ def filtmat(matrix, signal, diag=-1, isvec=True):
         Diagonal matrix to be used in inverse filtering. Default is -1, which bypasses filtering.
     isvec: boolean, optional
         Flag that indicates whether the diagonal matrix (diag) is represented as a vector.
+    isrational: boolean, optional
+        Flag that indicates whether the matrix (matrix) is a tuple matrix of rational polynomials
+        such that matrix = (num, den)
     Returns
     -------
     out : ndarray
         Filtered output signal.
     """
+    # Checking type
+    if not isinstance(matrix, ndarray) or not isinstance(signal,ndarray):
+        raise Exception("Input arguments type must be numpy.ndarray.")
+
     m, n = matrix.shape
     ms, ns = signal.shape
 
-    # Checking type
-    if not isinstance(matrix, ndarray) or not isinstance(signal,ndarray):
-        raise Exception("Input arguments' type must be numpy.ndarray.")
 
     # Checking dimension
     if ns != n:
@@ -60,12 +64,21 @@ def filtmat(matrix, signal, diag=-1, isvec=True):
     output = zeros([ms, m])
     for i in range(m):
         for j in range(n):
-            output[:, i] += lfilter(matrix[i, j], [1], signal[:, j], axis = 0)
-        if diag != -1:
-            if isvec == True:
-                output[:, i] = lfilter([1], diag[i, 0], output[:, i], axis = 0)
+            if isrational:
+                output[:, i] += lfilter(matrix[i, j][0], matrix[i, j][1], signal[:, j], axis = 0)
             else:
-                output[:, i] = lfilter([1], diag[i, i], output[:, i], axis = 0)
+                output[:, i] += lfilter(matrix[i, j], [1], signal[:, j], axis = 0)
+        if diag != -1:
+            if isrational:
+                if isvec == True:
+                    output[:, i] = lfilter(diag[i, 0][0], diag[i, 0][1], output[:, i], axis = 0)
+                else:
+                    output[:, i] = lfilter(diag[i, i][0], diag[i, i][1], output[:, i], axis = 0)
+            else:
+                if isvec == True:
+                    output[:, i] = lfilter([1], diag[i, 0], output[:, i], axis = 0)
+                else:
+                    output[:, i] = lfilter([1], diag[i, i], output[:, i], axis = 0)
     return output
 
 def sortmat(A):
