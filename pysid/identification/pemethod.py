@@ -341,13 +341,66 @@ def armax(na, nb, nc, nk, u, y):
             k += nb[i, j] + 1
         k = 0
         for j in range(0, ny):
-            if (i == j):
+            if (j == 0):
                 A[i, j] = append([1], theta[k:k+na[i, j]])
             else:
                 A[i, j] = append([0], theta[k:k+na[i, j]])
             k += na[i, j]
-        # Model
-        m = polymodel('armax', A, B, C, None, None, nk, da+db+dc, (u, y), nu, ny, 1)
+    # Sort A
+    As = sortmat(A)
+    # Estimate the prediction error: e(t) = C**-1 (y - G u)
+    # Get covariance:
+    L = amax([amax(na), amax(nb + nk), amax(nc)])
+    I = empty((ny, ny), dtype='object')
+    for i in range(ny):
+        for j in range(ny):
+            if i == j:
+                I[i, j] = array([1])
+            else:
+                I[i, j] = array([0])
+    ehat = (filtmat(As, y, C) - filtmat(B, u, C)) #[L:Ny, 0:ny]
+    # Get covariance of ehat
+    sig = (ehat.T @ ehat)/Ny
+    # Inverse of sig
+    isig = inv(sig)
+    # Model
+    m = polymodel('armax', As, B, C, None, None, nk, da+db+dc, (u, y), nu, ny, 1)
+    # Get filtered signals
+    Iny = eye(ny)
+    psiy = zeros(((Ny-L)*ny, da))
+    psiu = zeros(((Nu-L)*ny, db))
+    psie = zeros(((Ny-L)*ny, dc))
+    ka = 0
+    kb = 0
+    kc = 0
+    # Output regressors and Input Regressors
+    for i in range(0, ny):
+        # Get filtered signals
+        uf = lfilter([1], C[i][0], u, axis=0)
+        yf = lfilter([1], C[i][0], y, axis=0)
+        ef = lfilter([1], C[i][0], ehat, axis=0)
+        # Input
+        for j in range(0, nu):
+            if (nb[i, j] > -1):
+                psiu[:, kb:kb+nb[i, j]+1] = kron(toeplitz(uf[L-nk[i, j]:Nu-nk[i, j], j], uf[L-nk[i, j]-nb[i, j]:L-nk[i, j]+1, j][::-1]), Iny[:, i:i+1])
+                kb += nb[i, j] + 1
+        # Output
+        for j in range(0, ny):
+            if (na[i, j] > 0):
+                psiy[:, ka:ka+na[i,j]] = kron(-toeplitz(yf[L-1:-1, j], yf[L-na[i, j]:L, j][::-1]),Iny[:, i:i+1])
+                ka += na[i,j]
+        # Error
+        if (nc[i][0] > 0):
+            psie[:, kc:kc+nc[i][0]] = kron(toeplitz(ef[L-1:-1, i], ef[L-nc[i][0]:L, i][::-1]),Iny[:, i:i+1])
+            kc += nc[i][0]
+    psi = concatenate((psiy, psiu, psie), axis=1)
+    # Get gradient of the prediction error
+    # Initialize information matrix
+    M = zeros((da + db + dc, da + db + dc))
+    for k in range(0, psi.shape[0], ny):
+        M += psi[k:k+ny, :].T @ isig @ psi[k:k+ny, :]
+    M /= Ny
+    m.setcov(sig**2, inv(M)/Ny, sig)
     return m
 
 def oe(nb, nf, nk, u, y):
