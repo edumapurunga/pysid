@@ -21,7 +21,7 @@ import numpy.fft as fft
 __all__ = ['fir', 'arx', 'armax', 'oe', 'bj', 'pem']
 
 # Implementation
-def filtmat(matrix, signal, diag=-1, isvec=True):
+def filtmat(matrix, signal, diag=-1, isvec=True, isrational=False):
     """
     Filters a set of input signals (x) through a matrix (M) of polynomials, such that:
         y(t) = M*x(t)
@@ -41,17 +41,21 @@ def filtmat(matrix, signal, diag=-1, isvec=True):
         Diagonal matrix to be used in inverse filtering. Default is -1, which bypasses filtering.
     isvec: boolean, optional
         Flag that indicates whether the diagonal matrix (diag) is represented as a vector.
+    isrational: boolean, optional
+        Flag that indicates whether the matrix (matrix) is a tuple matrix of rational polynomials
+        such that matrix = (num, den)
     Returns
     -------
     out : ndarray
         Filtered output signal.
     """
+    # Checking type
+    if not isinstance(matrix, ndarray) or not isinstance(signal,ndarray):
+        raise Exception("Input arguments type must be numpy.ndarray.")
+
     m, n = matrix.shape
     ms, ns = signal.shape
 
-    # Checking type
-    if not isinstance(matrix, ndarray) or not isinstance(signal,ndarray):
-        raise Exception("Input arguments' type must be numpy.ndarray.")
 
     # Checking dimension
     if ns != n:
@@ -60,12 +64,21 @@ def filtmat(matrix, signal, diag=-1, isvec=True):
     output = zeros([ms, m])
     for i in range(m):
         for j in range(n):
-            output[:, i] += lfilter(matrix[i, j], [1], signal[:, j], axis = 0)
-        if diag != -1:
-            if isvec == True:
-                output[:, i] = lfilter([1], diag[i, 0], output[:, i], axis = 0)
+            if isrational:
+                output[:, i] += lfilter(matrix[i, j][0], matrix[i, j][1], signal[:, j], axis = 0)
             else:
-                output[:, i] = lfilter([1], diag[i, i], output[:, i], axis = 0)
+                output[:, i] += lfilter(matrix[i, j], [1], signal[:, j], axis = 0)
+        if diag != -1:
+            if isrational:
+                if isvec == True:
+                    output[:, i] = lfilter(diag[i, 0][0], diag[i, 0][1], output[:, i], axis = 0)
+                else:
+                    output[:, i] = lfilter(diag[i, i][0], diag[i, i][1], output[:, i], axis = 0)
+            else:
+                if isvec == True:
+                    output[:, i] = lfilter([1], diag[i, 0], output[:, i], axis = 0)
+                else:
+                    output[:, i] = lfilter([1], diag[i, i], output[:, i], axis = 0)
     return output
 
 def sortmat(A):
@@ -232,7 +245,7 @@ def arx(na, nb, nk, u, y, opt=0):
             ka += na[i, j]
     # Model
     m = polymodel('arx', A, B, None, None, None, nk, da+db, (u, y), nu, ny, 1)
-    e = filtmat(A, yo[L:Ny, 0:ny]) - filtmat(B, u[L:Nu, 0:nu])
+    e = (filtmat(A, yo) - filtmat(B, u))[L:Ny, 0:ny]
     sig = (e.T @ e)/Ny
     isig = inv(sig)
     M = zeros((da + db, da + db))
@@ -240,6 +253,7 @@ def arx(na, nb, nk, u, y, opt=0):
         M += phi[k:k+ny, :].T @ isig @ phi[k:k+ny, :]
     M /= Ny # phi.T @ inv(sig) @ phi
     m.setcov(V**2/Ny, inv(M)/Ny, sig)
+    m.parameters = array(a.tolist() + b.tolist())
     return m
 
 def armax(na, nb, nc, nk, u, y):
@@ -328,13 +342,66 @@ def armax(na, nb, nc, nk, u, y):
             k += nb[i, j] + 1
         k = 0
         for j in range(0, ny):
-            if (i == j):
+            if (j == 0):
                 A[i, j] = append([1], theta[k:k+na[i, j]])
             else:
                 A[i, j] = append([0], theta[k:k+na[i, j]])
             k += na[i, j]
-        # Model
-        m = polymodel('armax', A, B, C, None, None, nk, da+db+dc, (u, y), nu, ny, 1)
+    # Sort A
+    As = sortmat(A)
+    # Estimate the prediction error: e(t) = C**-1 (y - G u)
+    # Get covariance:
+    L = amax([amax(na), amax(nb + nk), amax(nc)])
+    I = empty((ny, ny), dtype='object')
+    for i in range(ny):
+        for j in range(ny):
+            if i == j:
+                I[i, j] = array([1])
+            else:
+                I[i, j] = array([0])
+    ehat = (filtmat(As, y, C) - filtmat(B, u, C)) #[L:Ny, 0:ny]
+    # Get covariance of ehat
+    sig = (ehat.T @ ehat)/Ny
+    # Inverse of sig
+    isig = inv(sig)
+    # Model
+    m = polymodel('armax', As, B, C, None, None, nk, da+db+dc, (u, y), nu, ny, 1)
+    # Get filtered signals
+    Iny = eye(ny)
+    psiy = zeros(((Ny-L)*ny, da))
+    psiu = zeros(((Nu-L)*ny, db))
+    psie = zeros(((Ny-L)*ny, dc))
+    ka = 0
+    kb = 0
+    kc = 0
+    # Output regressors and Input Regressors
+    for i in range(0, ny):
+        # Get filtered signals
+        uf = lfilter([1], C[i][0], u, axis=0)
+        yf = lfilter([1], C[i][0], y, axis=0)
+        ef = lfilter([1], C[i][0], ehat, axis=0)
+        # Input
+        for j in range(0, nu):
+            if (nb[i, j] > -1):
+                psiu[:, kb:kb+nb[i, j]+1] = kron(toeplitz(uf[L-nk[i, j]:Nu-nk[i, j], j], uf[L-nk[i, j]-nb[i, j]:L-nk[i, j]+1, j][::-1]), Iny[:, i:i+1])
+                kb += nb[i, j] + 1
+        # Output
+        for j in range(0, ny):
+            if (na[i, j] > 0):
+                psiy[:, ka:ka+na[i,j]] = kron(-toeplitz(yf[L-1:-1, j], yf[L-na[i, j]:L, j][::-1]),Iny[:, i:i+1])
+                ka += na[i,j]
+        # Error
+        if (nc[i][0] > 0):
+            psie[:, kc:kc+nc[i][0]] = kron(toeplitz(ef[L-1:-1, i], ef[L-nc[i][0]:L, i][::-1]),Iny[:, i:i+1])
+            kc += nc[i][0]
+    psi = concatenate((psiy, psiu, psie), axis=1)
+    # Get gradient of the prediction error
+    # Initialize information matrix
+    M = zeros((da + db + dc, da + db + dc))
+    for k in range(0, psi.shape[0], ny):
+        M += psi[k:k+ny, :].T @ isig @ psi[k:k+ny, :]
+    M /= Ny
+    m.setcov(sig**2, inv(M)/Ny, sig)
     return m
 
 def oe(nb, nf, nk, u, y):
@@ -383,6 +450,7 @@ def oe(nb, nf, nk, u, y):
     # Initialization
     B = empty((ny, nu), dtype=object)
     F = empty((ny, nu), dtype=object)
+    BdF = empty((ny, nu), dtype=object)
     for j in range(0, ny):
         A = []
         B_ = []
@@ -408,9 +476,49 @@ def oe(nb, nf, nk, u, y):
         for i in range(0, nu):
             B[j, i] = append(zeros((1, nk[j, i])), b[kb:kb+nb[j, i]+1])
             F[j, i] = append([1], f[kf:kf+nf[j, i]])
+            BdF[j, i] = (B[j, i], F[j, i])
             kf += nf[j, i]
             kb += nb[j, i] + 1
-        m = polymodel('oe', None, B, None, None, F, nk, db+df, (u, y), nu, ny, 1)
+    ehat = y - filtmat(BdF, u, isrational=True) #[L:Ny, 0:ny]
+    # Get covariance of ehat
+    sig = (ehat.T @ ehat)/Ny
+    # Inverse of sig
+    isig = inv(sig)
+    # Model
+    kb = 0
+    kf = 0
+    # Get covariance:
+    L = amax([amax(nf), amax(nb + nk)])
+    Iny = eye(ny)
+    psiy = zeros(((Ny-L)*ny, df))
+    psiu = zeros(((Nu-L)*ny, db))
+    # Output regressors and Input Regressors
+    for i in range(0, ny):
+        kw = 0
+        # Get filtered signals
+        uf = zeros((Ny, nu))
+        wf = zeros((Ny, nu))
+        # Input
+        for j in range(0, nu):
+            if (nb[i, j] > -1):
+                wf[:, kw] = lfilter(B[i, j], convolve(F[i, j], F[i, j]), u[:, j], axis=0)
+                uf[:, kw] = lfilter([1], F[i, j], u[:, j], axis=0)
+                psiu[:, kb:kb+nb[i, j]+1] = kron(toeplitz(uf[L-nk[i, j]:Nu-nk[i, j], j], uf[L-nk[i, j]-nb[i, j]:L-nk[i, j]+1, j][::-1]), Iny[:, i:i+1])
+                psiy[:, kf:kf+nf[i,j]] = kron(-toeplitz(wf[L-1:-1, kw], wf[L-nf[i, j]:L, kw][::-1]),Iny[:, i:i+1])
+                kb += nb[i, j] + 1
+                kf += nf[i,j]
+                kw += 1
+    # Get Model
+    m = polymodel('oe', None, B, None, None, F, nk, db+df, (u, y), nu, ny, 1)
+    psi = concatenate((psiu, psiy), axis=1)
+    # Get gradient of the prediction error
+    # Initialize information matrix
+    M = zeros((df + db, df + db))
+    for k in range(0, psi.shape[0], ny):
+        M += psi[k:k+ny, :].T @ isig @ psi[k:k+ny, :]
+    M /= Ny
+    m.setcov(sol, inv(M)/Ny, sig)
+
     return m
 
 def bj(nb, nc, nd, nf, nk, u, y):

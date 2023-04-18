@@ -6,8 +6,10 @@
 import pytest
 from numpy import array, ndarray
 from numpy.random import rand, randn
+from numpy.linalg import inv
 from scipy.signal import lfilter
 from pysid.identification.pemethod import arx
+from scipy.stats import chi2
 
 # ------------------- PYTEST -------------------
 #   Running test modules with Pytest:
@@ -26,6 +28,25 @@ from pysid.identification.pemethod import arx
 # ------------------- FIXTURES -------------------
 
 # Defines a set of input and output data as a fixture
+
+def get_value_elipse(t, t0, P):
+    return (t - t0).T @ P @ (t - t0)
+
+def check_inside_elipse(chivalue, df, alfa=0.995):
+    return chivalue < chi2.ppf(alfa, df=df)
+
+def test_arx_siso():
+    A = array([1, -1.2, 0.36])
+    B = array([0, 0.5, 0.1])
+    t0 = array(A[1:].tolist() + B[1:].tolist())
+
+    u = randn(1000, 1)
+    e = 0.01*randn(1000, 1)
+    y = lfilter(B, A, u, axis=0) + lfilter([1], A, e, axis=0)
+    m = arx(2, 1, 1, u, y)
+    t = m.parameters
+    chivalue = get_value_elipse(t, t0, inv(m.P))
+    assert check_inside_elipse(chivalue, len(t))
 
 @pytest.fixture
 def test_polynomials():
@@ -91,7 +112,7 @@ def test_data_type(test_signals):
 
 #@pytest.mark.xfail
 def test_arx(test_signals):
-
+    # Signals
     u = test_signals[0]
     y = test_signals[1]
     Ao = array(test_signals[2])
