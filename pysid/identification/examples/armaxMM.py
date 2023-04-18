@@ -60,4 +60,4 @@ y2 = lfilter(convolve(-A21o, B11o), det, u[:, 0:1], axis=0) + \
 y = concatenate((y1, y2), axis=1)
 
 #Estimate the model and get only the parameters
-A, B, C = armax(na, nb, nc, nk, u, y)
+m = armax(na, nb, nc, nk, u, y)

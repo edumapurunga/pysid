@@ -39,4 +39,4 @@ e = 0.01*randn(N, ny)
 #Calculate the y through S (OE: G(q) = B(q)/F(q) and H(q) = 1)
 y = lfilter(B1o, F1o, u[:,0:1], axis=0) + lfilter(B2o, F2o, u[:,1:2], axis=0) + e
 #Estimate the model and get only the parameters
-B, F = oe(nb, nf, nk, u, y)
+m = oe(nb, nf, nk, u, y)

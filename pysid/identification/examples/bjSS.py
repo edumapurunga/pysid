@@ -36,4 +36,4 @@ e = 0.1*randn(N, ny)
 #Calculate the y through S (BJ: G(q) = B(q)/F(q) and H(q) = C(q)/D(q))
 y = lfilter(Bo, Fo, u, axis=0) + lfilter(Co, Do, e, axis=0)
 #Estimate the model and get only the parameters
-B, C, D, F = bj(nb, nc, nd, nf, nk, u, y)
+m = bj(nb, nc, nd, nf, nk, u, y)

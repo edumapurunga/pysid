@@ -45,4 +45,4 @@ for i in range(2, N):
     y2[i] = -A21o.dot(y1[i-2:i][::-1]) - A22o.dot(y2[i-2:i][::-1]) + B21o.dot(u[i-2:i, 0][::-1]) + B22o.dot(u[i-2:i, 1][::-1]) + e[i, 1]
 y = concatenate((y1, y2), axis=1)
 #Estimate the model and get only the parameters
-Ahat, Bhat = arx(na, nb, nk, u, y)
+m = arx(na, nb, nk, u, y)

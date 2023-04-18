@@ -42,4 +42,4 @@ y1 = lfilter(B11o, F11o, u[:,0:1], axis=0) + lfilter(B12o, F12o, u[:,1:2], axis=
 y2 = lfilter(B21o, F21o, u[:,0:1], axis=0) + lfilter(B22o, F22o, u[:,1:2], axis=0) + e[:,1:2]
 y = concatenate((y1, y2), axis=1)
 #Estimate the model and get only the parameters
-B, F = oe(nb, nf, nk, u, y)
+m = oe(nb, nf, nk, u, y)

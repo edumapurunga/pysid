@@ -35,4 +35,4 @@ e = 0.01*randn(N, ny)
 y = lfilter(B0o, Ao, u[:, 0:1], axis=0) + lfilter(B1o, Ao, u[:, 1:2], axis=0) + lfilter(B2o, Ao, u[:,2:3], axis=0) + lfilter([1], Ao, e[:,0:1], axis=0)
 y.reshape((N, ny))
 #Estimate the model and get only the parameters
-Ahat, Bhat = arx(na, nb, nk, u, y)
+m = arx(na, nb, nk, u, y)

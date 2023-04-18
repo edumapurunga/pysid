@@ -41,4 +41,4 @@ for i in range(2, N):
     y2[i] = dot(A21o[1:], -y1[i-2:i][::-1]) + dot(A22o[1:], -y2[i-2:i][::-1]) + dot(B2o[1:], u[i-2:i, 0][::-1])  + e[i, 1]
 y = concatenate((y1, y2), axis=1)
 #Estimate the model and get only the parameters
-A, B = arx(na, nb, nk, u, y)
+m = arx(na, nb, nk, u, y)

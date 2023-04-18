@@ -27,4 +27,4 @@ e = 0.01*randn(N, 1)
 #Calculate the y through S (ARX: G(q) = B(q)/A(q) and H(q) = 1/A(q))
 y = lfilter(Bo, Ao, u, axis=0) + lfilter([1], Ao, e, axis=0)
 #Estimate the model and get only the parameters
-A, B = arx(na, nb, nk, u, y)
+m = arx(na, nb, nk, u, y)

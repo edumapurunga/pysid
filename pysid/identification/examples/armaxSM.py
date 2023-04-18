@@ -49,4 +49,4 @@ for i in range(2, N):
     y2[i] = -dot(A21o[1:3], y1[i-2:i][::-1]) - dot(A2o[1:3], y2[i-2:i][::-1]) + dot(B2o[1:3], u[i-2:i, 0][::-1])
 y = concatenate((y1+v1, y2+v2), axis=1)
 #Estimate the model and get only the parameters
-A, B, C = armax(na, nb, nc, nk, u, y)
+m = armax(na, nb, nc, nk, u, y)

@@ -43,4 +43,4 @@ y3 = lfilter(Co, Do, e[:,0:1], axis=0)
 y_ = y1 + y2 + y3
 y = lfilter(B1o, F1o, u[:,0:1], axis=0) + lfilter(B2o, F2o, u[:,1:2], axis=0) + lfilter(Co, Do, e[:,0:1], axis=0)
 #Estimate the model and get only the parameters
-B, C, D, F = bj(nb, nc, nd, nf, nk, u, y)
+m = bj(nb, nc, nd, nf, nk, u, y)

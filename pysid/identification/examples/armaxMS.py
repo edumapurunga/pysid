@@ -35,4 +35,4 @@ e = 0.01*randn(N, ny)
 #Calculate the y through S (ARX: G(q) = B(q)/A(q) and H(q) = 1/A(q))
 y = lfilter(B0o, Ao, u[:,0:1], axis=0) + lfilter(B1o, Ao, u[:,1:2], axis=0) + lfilter(Co, Ao, e[:,0:1], axis=0)
 #Estimate the model and get only the parameters
-A, B, C = armax(na, nb, nc, nk, u, y)
+m = armax(na, nb, nc, nk, u, y)
