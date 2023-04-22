@@ -30,7 +30,7 @@ thetao = [-1.2, 0.36, 0.5, 0.1, 0.8, 0.2, -1.6, 0.64]
 #Number of Samples
 N = 400
 #Take u as uniform
-u = -1 + 2*random((N, nu))
+u = -1 + 2*randn(N, nu)
 #Generate gaussian white noise with standat deviation 0.1
 e = 0.1*randn(N, ny)
 #Calculate the y through S (BJ: G(q) = B(q)/F(q) and H(q) = C(q)/D(q))

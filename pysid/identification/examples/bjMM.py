@@ -43,7 +43,7 @@ thetao = [-1.2, 0.36, -1.4, 0.49, 0.5, 0.1, 0.3, -0.2, 0.8, 0.16, -1.8, 0.91]
 #Number of Samples
 N = 400
 #Take u as uniform
-u = -1 + 2*random((N, nu))
+u = -1 + 2*randn(N, nu)
 #u = ones((N, nu))
 #Generate gaussian white noise with standard deviation 0.1
 e = 0.01*randn(N, ny)
