@@ -259,5 +259,7 @@ def rls(na,nb,nk,u,y):
     #Create the object
     n_params = theta.shape[0]*theta.shape[1]
     m = polymodel('arx',A,B,None,None,None,nk,n_params+1,(u,y),nu,ny,1)
-
+    p = theta.T.tolist()[0]
+    p.reverse()
+    m.setparameters(p)
     return m
