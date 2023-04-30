@@ -55,6 +55,9 @@ class polymodel():
         self.ecov = ncov
         self.costfunction = V
 
+    def setparameters(self,p):
+        self.parameters = p
+
     def setaic(self, J=None, N=None, p=None):
         """Sets the AIC criterion"""
         if J is None:

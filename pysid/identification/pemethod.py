@@ -253,7 +253,7 @@ def arx(na, nb, nk, u, y, opt=0):
         M += phi[k:k+ny, :].T @ isig @ phi[k:k+ny, :]
     M /= Ny # phi.T @ inv(sig) @ phi
     m.setcov(V**2/Ny, inv(M)/Ny, sig)
-    m.parameters = array(a.tolist() + b.tolist())
+    m.setparameters(array(a.tolist() + b.tolist())) #m.parameters = array(a.tolist() + b.tolist())
     return m
 
 def armax(na, nb, nc, nk, u, y):
@@ -402,6 +402,7 @@ def armax(na, nb, nc, nk, u, y):
         M += psi[k:k+ny, :].T @ isig @ psi[k:k+ny, :]
     M /= Ny
     m.setcov(sig**2, inv(M)/Ny, sig)
+    m.setparameters(theta)
     return m
 
 def oe(nb, nf, nk, u, y):
@@ -518,7 +519,7 @@ def oe(nb, nf, nk, u, y):
         M += psi[k:k+ny, :].T @ isig @ psi[k:k+ny, :]
     M /= Ny
     m.setcov(sol, inv(M)/Ny, sig)
-
+    m.setparameters(theta)
     return m
 
 def bj(nb, nc, nd, nf, nk, u, y):
@@ -622,7 +623,8 @@ def bj(nb, nc, nd, nf, nk, u, y):
             kf += nf[j, i]
             kb += nb[j, i] + 1
         # Model
-        m = polymodel('boxjenkins', None, B, C, D, F, nk, db+dc+dd+df, (u, y), nu, ny, 1)
+    m = polymodel('boxjenkins', None, B, C, D, F, nk, db+dc+dd+df, (u, y), nu, ny, 1)
+    m.setparameters(theta)
     return m
 
 # %% Testing functions
@@ -1169,7 +1171,8 @@ def pem(A, B, C, D, F, u, y, mu=[] ,solver='lm'):
                     F[i] = 1
     #SIMO case
     elif (nu==1):
-        do = nothing
+        #do = nothing
+        pass
     #MIMO case
     else:
         #Define the orders of the polynomials
@@ -1238,7 +1241,7 @@ def pem(A, B, C, D, F, u, y, mu=[] ,solver='lm'):
                     #Known Elements
                     kA[i] = count_nonzero(muA[i])
                     #Unknown elements
-                    uKA[i] = na[i] - kA[i]
+                    ukA[i] = na[i] - kA[i]
                 kB = zeros((nu,), dtype = 'int32')
                 kF = zeros((nu,), dtype = 'int32')
                 #Unknown
