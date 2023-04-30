@@ -3,7 +3,7 @@
     Testing modules for pemethod.py using pytest
 """
 import pytest
-from numpy import array, ndarray, convolve, concatenate
+from numpy import array, ndarray, convolve, concatenate, zeros, dot
 from numpy.random import rand, randn
 from numpy.linalg import inv
 from scipy.signal import lfilter
@@ -78,6 +78,7 @@ def test_arx_siso(test_signals_arx_siso, test_polynomials_arx_siso):
     assert check_inside_elipse(chivalue, len(t))
 
 # -----------------Armax-----------------
+#SISO
 @pytest.fixture
 def test_polynomials_armax_siso(): #isso aqui define A e B para os testes q receberem test_polynomials
     Ao = [1, -1.2, 0.36]
@@ -109,11 +110,123 @@ def test_armax_siso(test_signals_armax_siso, test_polynomials_armax_siso):
     t0 = array(A[1:].tolist() + B[1:].tolist() + C[1:].tolist())
     
     nk = 1
-    m = armax(len(A), len(B)-(nk-1), len(C)-1, nk , u, y)
-    t = m.parameters # !!!!
+    m = armax(len(A), len(B)-(nk+1), len(C)-1, nk , u, y)
+    t = m.parameters
     chivalue = get_value_elipse(t, t0, inv(m.P)) #calc a elipse
     
     assert check_inside_elipse(chivalue, len(t)) # verifica se o theta esta dentro da elipse
+
+#SIMO
+@pytest.fixture
+def test_polynomials_armax_simo(): #isso aqui define A e B para os testes q receberem test_polynomials
+    A1o  = [1, -1.2, 0.36]
+    A12o = [0, 0.09, -0.1]
+    A2o  = [1, -1.6, 0.64]
+    A21o = [0, 0.2, -0.01]
+    B1o = [0, 0.5, 0.4]
+    B2o = [0, 0.2,-0.3]
+    C1o  = [1, 0.8,-0.1]
+    C2o  = [1, 0.9,-0.2]
+    return [A1o,A12o,A2o,A21o,B1o,B2o,C1o,C2o]
+
+@pytest.fixture
+def test_signals_armax_simo(test_polynomials_armax_simo):
+    A1o  = array(test_polynomials_armax_simo[0])
+    A12o = array(test_polynomials_armax_simo[1])
+    A2o  = array(test_polynomials_armax_simo[2])
+    A21o = array(test_polynomials_armax_simo[3])
+    B1o  = array(test_polynomials_armax_simo[4])
+    B2o  = array(test_polynomials_armax_simo[5])
+    C1o  = array(test_polynomials_armax_simo[6])
+    C2o  = array(test_polynomials_armax_simo[7])
+    N = 400
+    nu = 1
+    ny = 2
+    #Take u as uniform
+    u = -1.5 + 2*1.5*rand(N, nu)
+    #Generate gaussian white noise with standat deviation 0.01
+    e = 0.01*randn(N, ny)
+    #Calculate the y through S (ARX: G(q) = B(q)/A(q) and H(q) = 1/A(q))
+    y1 = zeros((N, 1))
+    y2 = zeros((N, 1))
+    v1 = lfilter(C1o, [1], e[:,0:1], axis=0)
+    v2 = lfilter(C2o, [1], e[:,1:2], axis=0)
+    #Simulate the true process 
+    for i in range(2, N):
+        y1[i] = -dot(A1o[1:3] ,y1[i-2:i][::-1]) - dot(A12o[1:3],y2[i-2:i][::-1]) + dot(B1o[1:3], u[i-2:i, 0][::-1])
+        y2[i] = -dot(A21o[1:3], y1[i-2:i][::-1]) - dot(A2o[1:3], y2[i-2:i][::-1]) + dot(B2o[1:3], u[i-2:i, 0][::-1])
+    y = concatenate((y1+v1, y2+v2), axis=1)
+    return [u,y]
+
+def test_armax_simo(test_signals_armax_simo, test_polynomials_armax_simo):
+    A1o  = array(test_polynomials_armax_simo[0])
+    A12o = array(test_polynomials_armax_simo[1])
+    A2o  = array(test_polynomials_armax_simo[2])
+    A21o = array(test_polynomials_armax_simo[3])
+    B1o  = array(test_polynomials_armax_simo[4])
+    B2o  = array(test_polynomials_armax_simo[5])
+    C1o  = array(test_polynomials_armax_simo[6])
+    C2o  = array(test_polynomials_armax_simo[7])
+    to = array(A1o[1:].tolist(),A12o[1:].tolist(),A21o[1:].tolist(),A2o[1:].tolist(),\
+               B1o[1:].tolist(),B2o[1:].tolist(), \
+               C1o[1:].tolist(),C2o[1:].tolist())
+
+    u = array(test_signals_armax_simo[0])
+    y = array(test_signals_armax_simo[1])
+    nk = [[1], [1]]
+    na = [[len(A1o)-1,len(A12o)-1],[len(A21o)-1,len(A2o)-1]]
+    nb = [[len(B1o)-(nk[0][0]+1)],[len(B2o)-(nk[1][0]+1)]]
+    nc = [[len(C1o)-1],[len(C2o)-1]]
+    m = armax(na,nb,nc,nk,u,y)
+    t = m.parameters
+    chiv = get_value_elipse(t,to,inv(m.P))
+
+    assert check_inside_elipse(chiv,len(t))
+
+#MISO
+@pytest.fixture
+def test_polynomials_armax_miso(): #isso aqui define A e B para os testes q receberem test_polynomials
+    Ao  = [1, -1.2, 0.36]
+    B0o = [0, 0.5, 0.4]
+    B1o = [0, 0.2,-0.3]
+    Co  = [1, 0.8,-0.1]
+    return [Ao,B0o,B1o,Co]
+
+@pytest.fixture
+def test_signals_armax_miso(test_polynomials_armax_miso):
+    Ao  = array(test_polynomials_armax_miso[0])
+    B0o = array(test_polynomials_armax_miso[1])
+    B1o = array(test_polynomials_armax_miso[2])
+    Co  = array(test_polynomials_armax_miso[3])
+    
+    nu = 2
+    ny = 1
+    N = 200
+    u = -1 + 2*rand(N, nu)
+    e = 0.01*randn(N, ny)
+    y = lfilter(B0o, Ao, u[:,0:1], axis=0) + lfilter(B1o, Ao, u[:,1:2], axis=0) + lfilter(Co, Ao, e[:,0:1], axis=0)
+    return[u,y]
+
+def test_armax_miso(test_polynomials_armax_miso,test_signals_armax_miso):
+    Ao  = array(test_polynomials_armax_miso[0])
+    B0o = array(test_polynomials_armax_miso[1])
+    B1o = array(test_polynomials_armax_miso[2])
+    Co  = array(test_polynomials_armax_miso[3])
+    to = array(Ao[1:].tolist(),\
+               B0o[1:].tolist(),B1o[1:].tolist(), \
+               Co[1:].tolist())
+
+    u = array(test_signals_armax_miso[0])
+    y = array(test_signals_armax_miso[1])
+    nk = [[1], [1]]
+    na = [[len(Ao)-1]]
+    nb = [[len(B0o)-(nk[0][0]+1)],[len(B1o)-(nk[1][0]+1)]]
+    nc = [[len(Co)-1]]
+    m = armax(na,nb,nc,nk,u,y)
+    t = m.parameters
+    chiv = get_value_elipse(t,to,inv(m.P))
+
+    assert check_inside_elipse(chiv,len(t))
 
 #MIMO
 @pytest.fixture
@@ -134,7 +247,7 @@ def test_polynomials_armax_mimo():
     return [A11o,A12o,A21o,A22o,B11o,B12o,B21o,B22o,C1o,C2o]
 
 @pytest.fixture
-def test_signals_mimo(test_polynomials_armax_mimo):
+def test_signals_armax_mimo(test_polynomials_armax_mimo):
     # makes mimo signals with S (ARX: G(q) = B(q)/A(q) and H(q) = C/A(q))
     A11o = test_polynomials_armax_mimo[0]
     A12o = test_polynomials_armax_mimo[1]
@@ -165,26 +278,49 @@ def test_signals_mimo(test_polynomials_armax_mimo):
      lfilter(convolve(A11o, C2o), det, e[:, 1:2], axis=0)
 
     y = concatenate((y1, y2), axis=1)
-     #Poderia retorna tambem os poinomios, mas como sabemos que eles virão de 
-     #test_polynomials_X fica meio redundante.
     return [u,y]
 
-# TODO test_armax_mimo
+def test_armax_mimo(test_polynomials_armax_mimo,test_signals_armax_mimo):
+    A11o = test_polynomials_armax_mimo[0]
+    A12o = test_polynomials_armax_mimo[1]
+    A21o = test_polynomials_armax_mimo[2]
+    A22o = test_polynomials_armax_mimo[3]
+    B11o = test_polynomials_armax_mimo[4]
+    B12o = test_polynomials_armax_mimo[5]
+    B21o = test_polynomials_armax_mimo[6]
+    B22o = test_polynomials_armax_mimo[7]
+    C1o = test_polynomials_armax_mimo[8]
+    C2o = test_polynomials_armax_mimo[9]
+    to = array(A11o[1:].tolist(),A12o[1:].tolist(),A21o[1:].tolist(),A22o[1:].tolist(),\
+               B11o[1:].tolist(),B12o[1:].tolist(),B21o[1:].tolist(),B22o[1:].tolist(), \
+               C1o[1:].tolist(),C2o[1:].tolist())
+
+    u = array(test_signals_armax_mimo[0])
+    y = array(test_signals_armax_mimo[1])
+    nk = [[1, 1], [1, 1]]
+    na = [[len(A11o)-1,len(A12o)-1],[len(A21o)-1,len(A22o)-1]]
+    nb = [[len(B11o)-(nk[0][0]+1),len(B12o)-(nk[0][1]+1)],[len(B21o)-(nk[1][0]+1),len(B22o)-(nk[1][1]+1)]]
+    nc = [[len(C1o)-1],[len(C2o)-1]]
+    m = armax(na,nb,nc,nk,u,y)
+    t = m.parameters
+
+    chiv = get_value_elipse(t,to,inv(m.P))
+    assert check_inside_elipse(chiv,len(t))
 
 # -----------------Recursive Module-----------------
-def test_rls_siso(test_signals_armax):
-    u = test_signals_armax[0]
-    y = test_signals_armax[1]
-    A = array(test_signals_armax[2])
-    B = array(test_signals_armax[3])
-    C = array(test_signals_armax[4])
-    t0 = array(A[1:].tolist() + B[1:].tolist() + C[1:].tolist())
+def test_rls_siso(test_signals_arx_siso,test_polynomials_arx_siso):
+    A = array(test_polynomials_arx_siso[0])
+    B = array(test_polynomials_arx_siso[1])
+    t0 = array(A[1:].tolist() + B[1:].tolist())
+
+    u = test_signals_arx_siso[0]
+    y = test_signals_arx_siso[1]
     nk = 1
 
-    m = rls(len(A), len(B)-(nk+1), len(C)-1, nk , u, y)
-    t = m.parameters # !!!!
+    m = rls(len(A), len(B)-(nk+1), nk , u, y)
+    t = m.parameters
     chivalue = get_value_elipse(t, t0, inv(m.P)) #calc a elipse
-    
+
     assert check_inside_elipse(chivalue, len(t)) # verifica se o theta esta dentro da elipse
 # ----------------- BJ -----------------
 # SISO
@@ -250,7 +386,7 @@ def test_signals_bj_simo(test_polynomials_bj_simo):
     D2o = array(test_polynomials_bj_simo[7])
 
     N = 400
-    u = -1 + 2*randn(N, len(test_polynomials_bj_simo)/4) #!!!!
+    u = -1 + 2*randn(N, len(test_polynomials_bj_simo)/4)
     e = 0.01*randn(N, 1)
     y1 = lfilter(B1o, F1o, u[:,0:1], axis=0) + lfilter(C1o, D1o, e[:,0:1], axis=0)
     y2 = lfilter(B2o, F2o, u[:,0:1], axis=0) + lfilter(C2o, D2o, e[:,1:2], axis=0)
@@ -337,6 +473,78 @@ def test_bj_miso(test_polynomials_bj_miso,test_signals_bj_miso):
     m = bj(nb,nc,nd,nf,nk,u,y)
     yhat = lfilter(m.B[0,0], m.F[0,0], u[:,0:1], axis=0) + lfilter(m.B[1,0], m.F[1,0], u[:,1:2], axis=0) + lfilter(m.C[0,0], m.D[0,0], e[:,0:1], axis=0)
     #TODO
+
+#MIMO
+@pytest.fixture
+def test_polynomials_bj_mimo():
+    F11o = [1, -1.2, 0.36]
+    F12o = [1, -1.8, 0.91]
+    F21o = [1, -1.4, 0.49]
+    F22o = [1, -1.0, 0.25]
+    B11o = [0, 0.5, 0.1]
+    B12o = [0, 0.9,-0.1]
+    B21o = [0, 0.4, 0.8]
+    B22o = [0, 0.3,-0.2]
+    C1o = [1, 0.8, 0.16]
+    C2o = [1, 0.9, 0.22]
+    D1o = [1, -1.8, 0.91]
+    D2o = [1, -1.6, 0.80]
+    return [F11o,F12o,F21o,F22o,B11o,B12o,B21o,B22o,C1o,C2o,D1o,D2o]
+
+@pytest.fixture
+def test_signals_bj_mimo(test_polynomials_bj_mimo):
+    F11o = array(test_polynomials_bj_mimo[0])
+    F12o = array(test_polynomials_bj_mimo[1])
+    F21o = array(test_polynomials_bj_mimo[2])
+    F22o = array(test_polynomials_bj_mimo[3])
+    B11o = array(test_polynomials_bj_mimo[4])
+    B12o = array(test_polynomials_bj_mimo[5])
+    B21o = array(test_polynomials_bj_mimo[6])
+    B22o = array(test_polynomials_bj_mimo[7])
+    C1o  = array(test_polynomials_bj_mimo[8])
+    C2o  = array(test_polynomials_bj_mimo[9])
+    D1o  = array(test_polynomials_bj_mimo[10])
+    D2o  = array(test_polynomials_bj_mimo[11])
+    N = 400
+    nu = 2
+    ny = 2
+    u = -1 + 2*randn(N, nu)
+    e = 0.01*randn(N, ny)
+    y1 = lfilter(B11o, F11o, u[:,0:1], axis=0) + lfilter(B12o, F12o, u[:,1:2], axis=0) + lfilter(C1o, D1o, e[:,0:1], axis=0)
+    y2 = lfilter(B21o, F21o, u[:,0:1], axis=0) + lfilter(B22o, F22o, u[:,1:2], axis=0) + lfilter(C2o, D2o, e[:,1:2], axis=0)
+    y = concatenate((y1, y2), axis=1)
+
+    return [u,y]
+
+def test_bj_mimo(test_signals_bj_mimo,test_polynomials_bj_mimo):
+    F11o = array(test_polynomials_bj_mimo[0])
+    F12o = array(test_polynomials_bj_mimo[1])
+    F21o = array(test_polynomials_bj_mimo[2])
+    F22o = array(test_polynomials_bj_mimo[3])
+    B11o = array(test_polynomials_bj_mimo[4])
+    B12o = array(test_polynomials_bj_mimo[5])
+    B21o = array(test_polynomials_bj_mimo[6])
+    B22o = array(test_polynomials_bj_mimo[7])
+    C1o  = array(test_polynomials_bj_mimo[8])
+    C2o  = array(test_polynomials_bj_mimo[9])
+    D1o  = array(test_polynomials_bj_mimo[10])
+    D2o  = array(test_polynomials_bj_mimo[11])
+    
+    u = test_signals_bj_mimo[0]
+    y = test_signals_bj_mimo[1]
+    
+    nk = [[1, 1], [1, 1]]
+    nf = [[len(F11o)-1,len(F12o)-1],[len(F21o)-1,len(F22o)-1]]
+    nb = [[len(B11o)-(nk[0,0]+1),len(B12o)-(nk[0,1]+1)],[len(B21o)-(nk[1,0]+1),len(B22o)-(nk[1,1]+1)]]
+    nc = [[len(C1o)-1],[len(C2o)-1]]
+    nd = [[len(D1o)-1],[len(D2o)-1]]
+    e = 0.01*randn(len(y[:,0]), len(y[0,:]))
+    
+    m = bj(nb, nc, nd, nf, nk, u, y)
+    y1 = lfilter(m.B[0,0], m.F[0,0], u[:,0:1], axis=0) + lfilter(m.B[0,1], m.F[0,1], u[:,1:2], axis=0) + lfilter(m.C[0], m.D[0], e[:,0:1], axis=0)
+    y2 = lfilter(m.B[1,0] ,m.F[1,0], u[:,0:1], axis=0) + lfilter(m.B[1,1], m.F[1,1], u[:,1:2], axis=0) + lfilter(m.C[1], m.D[1], e[:,1:2], axis=0)
+    yhat = concatenate((y1, y2), axis=1)
+    # TODO
 # -----------------  -----------------
 # Defines sets of arguments for tests that request the respective fixtures
 # Here, the values of na to nk are varied
