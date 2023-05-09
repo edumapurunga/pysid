@@ -5,7 +5,7 @@
 # Imports
 from numpy import arange, array, append, copy, count_nonzero,\
 delete, dot, empty, sum, size, amax, concatenate, shape, zeros, kron,\
-eye, reshape, convolve, where, equal, ndarray
+eye, reshape, convolve, where, equal, ndarray, floor
 from scipy.linalg import toeplitz, inv
 from scipy.signal import lfilter
 from scipy.optimize import least_squares
@@ -307,7 +307,17 @@ def armax(na, nb, nc, nk, u, y):
         B_ = []
         E = copy(y[:,i:i+1])
         # High order model
-        mho = arx(50, [50,]*nu, [1,]*nu, u, y[:, i:i+1])
+        """
+        Devido a quantidade de dados "L" que é preciso para montar o psi 
+        inicialmente ficava faltando dados para a identificação, tentava-se
+        estimar n parâmetros com k linhas (n>k), dessa forma isso não acontece
+        porém é preciso ter pelo menos 8 dados (claro q tentar fazer 
+            uma identificação não faz sentido na prática, mas é uma limitação)
+        """
+        ho = int(floor((Nu-2)/3))-1 #order of the High order model
+        if(ho>50):
+            ho=50
+        mho = arx(ho, [ho,]*nu, [1,]*nu, u, y[:, i:i+1])
         aho, bho = mho.A, mho.B
         # Estimate of the prediction errors
         ehat = lfilter(aho[0][0], [1], y[:, i:i+1], axis=0)
