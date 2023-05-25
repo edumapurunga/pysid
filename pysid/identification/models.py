@@ -187,7 +187,7 @@ class polymodel():
         model_str = model_str + "\nTime delay:\n" + str(self.delay)
 
         # TODO: Define setcov() parameters for all pemethod.py functions
-        if self.ecov.any() is not None:
+        if self.ecov is not None:
             model_str = model_str + "\n\necov: " + str(self.ecov)
             model_str = model_str + "\nCost function per sample: " + str(self.costfunction)
             model_str = model_str + "\n\nAccuracy:\n" + str(self.P)
