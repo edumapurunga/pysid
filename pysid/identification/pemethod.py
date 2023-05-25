@@ -314,7 +314,7 @@ def armax(na, nb, nc, nk, u, y):
         porém é preciso ter pelo menos 8 dados (claro q tentar fazer 
             uma identificação não faz sentido na prática, mas é uma limitação)
         """
-        ho = int(floor((Nu-2)/3))-1 #order of the High order model
+        ho = int(floor((Nu-2)/3)-max(nk)) #order of the High order model
         if(ho>50):
             ho=50
         mho = arx(ho, [ho,]*nu, [1,]*nu, u, y[:, i:i+1])
