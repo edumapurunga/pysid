@@ -407,6 +407,7 @@ def armax(na, nb, nc, nk, u, y):
     for k in range(0, psi.shape[0], ny):
         M += psi[k:k+ny, :].T @ isig @ psi[k:k+ny, :]
     M /= Ny
+    m.M = M
     m.setcov(sig**2, inv(M)/Ny, sig)
     m.setparameters(theta)
     return m
@@ -524,6 +525,7 @@ def oe(nb, nf, nk, u, y):
     for k in range(0, psi.shape[0], ny):
         M += psi[k:k+ny, :].T @ isig @ psi[k:k+ny, :]
     M /= Ny
+    m.M = M
     m.setcov(sol, inv(M)/Ny, sig)
     m.setparameters(theta)
     return m

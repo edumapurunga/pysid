@@ -28,6 +28,7 @@ class polymodel():
 
         # TODO: Ensure that setcov() is always called in pemethod.py
         self.ecov = None
+        self.M = None
 
     # Iterable
     def __iter__(self):
