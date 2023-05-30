@@ -402,7 +402,18 @@ def armax(na, nb, nc, nk, u, y):
     M /= Ny
     m.M = M
     m.setcov(sig**2, inv(M)/Ny, sig)
-    m.setparameters(theta)
+    # Collect parameters
+    thetaa = []
+    thetab = []
+    thetac = []
+    for i in range(ny):
+        for j in range(ny):
+            thetaa += As[i, j][1:].tolist()
+        for j in range(nu):
+            thetab += B[i, j][nk[i, j]:].tolist()
+        thetac += C[i][0][1:].tolist()
+
+    m.setparameters(array(thetaa+thetab+thetac))
     return m
 
 def oe(nb, nf, nk, u, y):
