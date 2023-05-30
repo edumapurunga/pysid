@@ -307,16 +307,9 @@ def armax(na, nb, nc, nk, u, y):
         B_ = []
         E = copy(y[:,i:i+1])
         # High order model
-        """
-        Devido a quantidade de dados "L" que é preciso para montar o psi 
-        inicialmente ficava faltando dados para a identificação, tentava-se
-        estimar n parâmetros com k linhas (n>k), dessa forma isso não acontece
-        porém é preciso ter pelo menos 8 dados (claro q tentar fazer 
-            uma identificação não faz sentido na prática, mas é uma limitação)
-        """
-        ho = int(floor((Nu-2)/3)-max(nk)) #order of the High order model
-        if(ho>50):
-            ho=50
+        ho = int(floor((Nu-2)/3)-amax(nk)) #order of the High order model
+        if(ho > 50):
+            ho = 50
         mho = arx(ho, [ho,]*nu, [1,]*nu, u, y[:, i:i+1])
         aho, bho = mho.A, mho.B
         # Estimate of the prediction errors
