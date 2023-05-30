@@ -262,4 +262,5 @@ def rls(na,nb,nk,u,y):
     p = theta.T.tolist()[0]
     p.reverse()
     m.setparameters(p)
+    m.setcov(None, P, None)
     return m
