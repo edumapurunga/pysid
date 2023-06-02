@@ -4,12 +4,12 @@
 """
 import pytest
 from numpy import array, ndarray, convolve, cos, sin, concatenate, zeros, dot, \
-    sqrt, pi, roots, abs
+    sqrt, pi, roots, abs, ones
 from numpy.random import rand, randn, randint
 from numpy.linalg import inv, cond
 from scipy.signal import lfilter
 from pysid.identification.pemethod import arx, armax, bj, oe
-from pysid.identification.recursive import rls 
+from pysid.identification.recursive import rls
 from scipy.stats import chi2
 
 # ------------------- PYTEST -------------------
@@ -133,6 +133,44 @@ def test_arx_random_siso():
     t0 = array(Ao[1:].tolist() + Bo[nk:].tolist())
 
     m = arx(na-1, nb-1, nk, u, y)
+    t = m.parameters
+    chivalue = get_value_elipse(t, t0, inv(m.P))
+    assert check_inside_elipse(chivalue, len(t))
+
+
+def test_arx_random_miso():
+    n = 10
+    ny = 1                   #number of outputs (single)
+    nu = randint(2,n)        #number of inputs
+
+    nb = randint(2,n,(ny,nu)) #1 x nu
+    na = max(nb.max(), 1+randint(0,10))
+    nk = 1 + randint(0, n,(ny,nu))
+
+    #Generate Polynomials
+    Ao = gen_stable_poly(na)
+
+    N = 1000                # Number of samples
+    e = 0.01*randn(N, 1)    # Emulates Gaussian white noise with std = 0.01
+
+    Bo = zeros((nu,1), dtype=object)
+    u = zeros((N,nu), dtype=float)
+
+    #Generates Bo's and the inputs
+    for i in range(nu):
+        Boo = -1 + 2*randn(nb[0,i]) #generate B's
+        Bo[i][0] = concatenate(([0,]*nk[0,i],Boo))
+        u[:,i] = -sqrt(randint(2,27)) + 2*sqrt(randint(0,13))*rand(N,)
+
+    t0 = Ao[1:].tolist()
+
+    y = lfilter([1], Ao, e, axis=0)
+    #simulate the model and makes t0
+    for i in range(nu):
+        y = y + lfilter(Bo[i,0], Ao, u[:,i]).reshape(N,1)
+        t0 = concatenate((t0, Bo[i,0][nk[0,i]:].tolist()),axis=0)
+
+    m = arx(int(na-1),nb-ones(nb.shape,dtype=int),nk,u,y)
     t = m.parameters
     chivalue = get_value_elipse(t, t0, inv(m.P))
     assert check_inside_elipse(chivalue, len(t))
