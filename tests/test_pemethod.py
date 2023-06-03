@@ -160,7 +160,7 @@ def test_arx_random_miso():
     for i in range(nu):
         Boo = -1 + 2*randn(nb[0,i]) #generate B's
         Bo[i][0] = concatenate(([0,]*nk[0,i],Boo))
-        u[:,i] = -sqrt(randint(2,27)) + 2*sqrt(randint(0,13))*rand(N,)
+        u[:,i] = -sqrt(3) + 2*sqrt(3)*rand(N,)
 
     t0 = Ao[1:].tolist()
 
