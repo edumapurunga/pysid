@@ -162,7 +162,7 @@ def print_poly(P,dim,name,prec=3):
     print("\n")
 
 
-def print_model(model,prec=3,names=['A','B','C','D','F']):
+def print_model(model,prec=3):
     """
     Prints the set of polynomials that define a given model.
 
@@ -172,12 +172,20 @@ def print_model(model,prec=3,names=['A','B','C','D','F']):
         Identification model object containing a set of polynomials.
     prec : integer, optional
         Decimal precision for the coefficients. Default is prec = 3.
-    names : list of strings
-        Name displayed for each polynomial in the model. Default is 'A','B','C','D','F']
     Returns
-    -------
     
     """
+    names = []
+    if model.A != None:
+        names.append('A')
+    if model.B != None:
+        names.append('B')
+    if model.C != None:
+        names.append('C')
+    if model.D != None:
+        names.append('D')
+    if model.F != None:
+        names.append('F')
     # Model should be a pysid.identification.models.polymodel() object
     index = 0
     ny, nu = model.ny, model.nu
