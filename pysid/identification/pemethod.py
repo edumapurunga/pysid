@@ -587,8 +587,8 @@ def bj(nb, nc, nd, nf, nk, u, y):
         return e
     # Initial Guess
     B = empty((ny, nu), dtype=object)
-    C = empty((ny, ), dtype=object)
-    D = empty((ny, ), dtype=object)
+    C = empty((ny,1), dtype=object)
+    D = empty((ny,1), dtype=object)
     F = empty((ny, nu), dtype=object)
     # TODO: Verify a way to compute an ARMA process
     for j in range(0, ny):
@@ -622,8 +622,8 @@ def bj(nb, nc, nd, nf, nk, u, y):
         sol = least_squares(pe, thetai, args=(nf[j], nb[j], nc[j][0], nd[j][0], nk[j], u.reshape(Nu, nu), y[:,j]))
         theta = sol.x
         #B[j] = append(zeros((1, nk[j])), theta[nf[j]:nf[j]+nb[j]+1])
-        C[j] = append([1], theta[sum(nf[j])+sum(nb[j]+1):nc[j][0]+sum(nf[j])+sum(nb[j]+1)])
-        D[j] = append([1], theta[nc[j][0]+sum(nf[j])+sum(nb[j]+1):nd[j][0]+nc[j][0]+sum(nf[j])+sum(nb[j]+1)])
+        C[j,0] = append([1], theta[sum(nf[j])+sum(nb[j]+1):nc[j][0]+sum(nf[j])+sum(nb[j]+1)])
+        D[j,0] = append([1], theta[nc[j][0]+sum(nf[j])+sum(nb[j]+1):nd[j][0]+nc[j][0]+sum(nf[j])+sum(nb[j]+1)])
         #F[j] = append([1], theta[0:nf[j]])
         F_ = theta[0:sum(nf[j])]
         B_ = theta[sum(nf[j]):sum(nf[j])+sum(nb[j]+1)]
