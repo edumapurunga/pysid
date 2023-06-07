@@ -530,7 +530,7 @@ def oe(nb, nf, nk, u, y):
         M += psi[k:k+ny, :].T @ isig @ psi[k:k+ny, :]
     M /= Ny
     m.M = M
-    m.setcov(sol, inv(M)/Ny, sig)
+    m.setcov(sol.cost, inv(M)/Ny, sig)
     m.setparameters(theta)
     return m
 
