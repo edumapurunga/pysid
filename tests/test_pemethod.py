@@ -4,7 +4,7 @@
 """
 import pytest
 from numpy import array, ndarray, convolve, cos, sin, concatenate, zeros, dot, \
-    sqrt, pi, roots, abs, ones
+    sqrt, pi, roots, abs, ones, amax, dot, append, reshape
 from numpy.random import rand, randn, randint
 from numpy.linalg import inv, cond
 from scipy.signal import lfilter
@@ -137,6 +137,62 @@ def test_arx_random_siso():
     chivalue = get_value_elipse(t, t0, inv(m.P))
     assert check_inside_elipse(chivalue, len(t))
 
+def test_arx_random_simo():
+    n = 5
+    ny = randint(2,n)                  #number of outputs
+    nu = 1                             #number of inputs (single)
+
+    na = randint(3,n,(ny,ny)) #ny x ny
+
+    #Generate Polynomials
+    Ao = zeros((ny,ny),dtype=object)
+    for i in  range(ny):
+        for j in range(ny):
+            Ao[i,j] = gen_stable_poly(na[i,j])
+            if i != j:
+                Ao[i,j][0] = 0
+
+    Bo = zeros((ny,1), dtype=object)
+    nk = 1 + randint(0, n,(ny,nu))
+    nb = array([],dtype=int)
+    for i in range(ny):
+        nb = append(nb,min( na[i].min(), 1+randint(0,10) ))
+        Boo = -1 + 2*randn(nb[i])
+        Bo[i][0] = concatenate(([0,]*nk[i,0],Boo))
+    nb = reshape(nb, (ny,1)) #from (ny,) to (ny,1)  (ny = len(nb))
+    N = 1000                              # Number of samples
+    u = -sqrt(3) + 2*sqrt(3)*rand(N, 1)   # Defines input signal
+    e = 0.01*randn(N, ny)                  # Emulates Gaussian white noise with std = 0.01
+
+    # Calculates the y ARX: G(q) = B(q)/A(q) and H(q) = 1/A(q)
+    y = zeros((N,ny),dtype=float) #y's, com ny linhas e N colunas, cada linha é uma saida
+    L = max(amax(na),amax(nb+nk)) #to know were to start
+    for i in range(L,N):
+        for j in range(ny): # for each output
+            for k in range(ny): # to travel in cols of the Ao matrix
+                # [::-1] makes the array backwards
+                y[i,j] += dot(Ao[j,k][1:],-y[i-(len(Ao[j,k])-1):i,k][::-1])
+            y[i,j] += dot(Bo[j,0][nk[j,0]:],u[i-len(Bo[j,0][nk[j,0]:]):i,0][::-1]) 
+        y[i,j] += e[i,j]
+
+    print("------roots-------")
+    for i in range(ny):
+        for j in range(ny):
+            print(abs(roots(Ao[i,j])))
+
+    t0 = array([])
+    for i in range(ny):
+        for j in range(ny):
+            t0 = concatenate((t0, Ao[i,j][1:]))
+    print("last 'A' param -->",t0[-1:],"\n")
+    for i in range(ny):
+        t0 = concatenate((t0, Bo[i,0][nk[i,0]:]))
+    m = arx(na-ones(na.shape,dtype=int),nb-ones(nb.shape,dtype=int),nk,u,y)
+    t = m.parameters
+    for i in range(len(t0)):
+        print(t0[i],"\t##\t",t[i])
+    chivalue = get_value_elipse(t, t0, inv(m.P))
+    assert check_inside_elipse(chivalue, len(t))
 
 def test_arx_random_miso():
     n = 10
@@ -172,6 +228,73 @@ def test_arx_random_miso():
 
     m = arx(int(na-1),nb-ones(nb.shape,dtype=int),nk,u,y)
     t = m.parameters
+    chivalue = get_value_elipse(t, t0, inv(m.P))
+    assert check_inside_elipse(chivalue, len(t))
+
+def test_arx_random_mimo():
+    n = 5
+    ny = randint(2,n)        #number of outputs (single)
+    nu = randint(2,n)        #number of inputs
+
+    nb = randint(3,n,(ny,nu)) #ny x nu
+    na = randint(3,n,(ny,ny)) #ny x ny
+    nk = 1 + randint(0, n,(ny,nu))
+    #nk[i,j] delay of uj input for yi output
+    #nb[i,j] order of uj input for yi output
+
+    N = 1000                # Number of samples
+    e = 0.01*randn(N, ny)    # Emulates Gaussian white noise with std = 0.01
+
+
+    #Generate Polynomials
+    Ao = zeros((ny,ny),dtype=object)
+    for i in  range(ny):
+        for j in range(ny):
+            Ao[i,j] = gen_stable_poly(na[i,j])
+            if i != j:
+                Ao[i,j][0] = 0
+
+    Bo = zeros((nu,ny), dtype=object)
+    u = zeros((N,nu), dtype=float)
+
+    #Generates Bo's and the inputs
+    for i in range(nu):
+        for j in range(ny):
+            Boo = -1 + 2*randn(nb[j,i]) #generate B's
+            Bo[i,j] = concatenate(([0,]*nk[j,i],Boo))
+            u[:,i] = -sqrt(3) + 2*sqrt(3)*rand(N,)
+
+    print(nu,ny,"\n\n",Ao,"\n\n *** \n",Bo)
+    # Calculates the y ARX: G(q) = B(q)/A(q) and H(q) = 1/A(q)
+    y = zeros((N,ny),dtype=float) #y's, com ny linhas e N colunas, cada linha é uma saida
+    L = max(amax(na),amax(nb+nk)) #to know were to start
+    for i in range(L,N):
+        for j in range(ny): # for each output
+            for k in range(ny): # to travel in cols of the Ao matrix
+                # [::-1] makes the array backwards
+                y[i,j] += dot(Ao[j,k][1:],-y[i-(len(Ao[j,k])-1):i,k][::-1])
+            for k in range(nu):# for each input
+                y[i,j] += dot(Bo[k,j][nk[j,k]:],u[i-len(Bo[k,j][nk[j,k]:]):i,k][::-1])
+        y[i,j] += e[i,j]
+
+
+    print("------roots-------")
+    for i in range(ny):
+        for j in range(ny):
+            print(abs(roots(Ao[i,j])))
+
+    t0 = array([])
+    for i in range(ny):
+        for j in range(ny):
+            t0 = concatenate((t0, Ao[i,j][1:]))
+    print("last 'A' param -->",t0[-1:],"\n")
+    for i in range(ny):
+        for j in range(nu):
+            t0 = concatenate((t0, Bo[j,i][nk[i,j]:]))
+    m = arx(na-ones(na.shape,dtype=int),nb-ones(nb.shape,dtype=int),nk,u,y)
+    t = m.parameters
+    for i in range(len(t0)):
+        print(t0[i],"\t##\t",t[i])
     chivalue = get_value_elipse(t, t0, inv(m.P))
     assert check_inside_elipse(chivalue, len(t))
 
