@@ -4,6 +4,7 @@
 #%%
 # Imports
 from numpy import log
+from pysid.io.print import print_model
 # Classes
 class polymodel():
     """
@@ -41,9 +42,10 @@ class polymodel():
         return s
 
     def __str__(self):
-        s = 'A ' + self.name + ' model'
+        print('A ' + self.name + ' model')
+        print_model(self,only_polynomials=True)
         polymodelname = type(self).__name__
-        return s
+        return ''
 
     def __eq__(self, other):
         return tuple(self) == tuple(other)

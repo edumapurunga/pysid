@@ -162,7 +162,7 @@ def print_poly(P,dim,name,prec=3):
     print("\n")
 
 
-def print_model(model,prec=3):
+def print_model(model,prec=3,only_polynomials=False):
     """
     Prints the set of polynomials that define a given model.
 
@@ -195,12 +195,13 @@ def print_model(model,prec=3):
             print_poly(poly,dims[index],names[index],prec)
             index = index + 1
 
-    if hasattr(model, 'costfunction'):
-        print(f'Cost function per sample: ' + coef_to_str(model.costfunction,prec))
-
-    if hasattr(model, 'P'):
-        print(f'Accuracy:')
-        if which('latex') is not None:
-            display(Math(matrix_to_str(model.P,prec)))
-        else:
-            print_matrix(model.P,prec)
+    if not only_polynomials:
+        if hasattr(model, 'costfunction'):
+            print(f'Cost function per sample: ' + coef_to_str(model.costfunction,prec))
+    
+        if hasattr(model, 'P'):
+            print(f'Accuracy:')
+            if which('latex') is not None:
+                display(Math(matrix_to_str(model.P,prec)))
+            else:
+                print_matrix(model.P,prec)
