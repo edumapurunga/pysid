@@ -249,7 +249,7 @@ def arx(na, nb, nk, u, y, opt=0):
         M += phi[k:k+ny, :].T @ isig @ phi[k:k+ny, :]
     M /= Ny # phi.T @ inv(sig) @ phi
     m.setcov(V**2/Ny, inv(M)/Ny, sig)
-    m.setparameters(array(a.tolist() + b.tolist())) #m.parameters = array(a.tolist() + b.tolist())
+    m.setparameters(array(a.tolist() + b.tolist()))
     return m
 
 def armax(na, nb, nc, nk, u, y):
