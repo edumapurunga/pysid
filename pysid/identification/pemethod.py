@@ -460,6 +460,8 @@ def oe(nb, nf, nk, u, y):
                 #TODO verify the strange lfilter behavior here too
         return e
     # Initialization
+    parb = []
+    parf = []
     B = empty((ny, nu), dtype=object)
     F = empty((ny, nu), dtype=object)
     BdF = empty((ny, nu), dtype=object)
@@ -485,6 +487,8 @@ def oe(nb, nf, nk, u, y):
         kb = 0
         f = theta[0:sum(nf[j])]
         b = theta[sum(nf[j]):sum(nf[j])+sum(nb[j]+1)+2]
+        parb += b.flatten().tolist()
+        parf += f.flatten().tolist()
         for i in range(0, nu):
             B[j, i] = append(zeros((1, nk[j, i])), b[kb:kb+nb[j, i]+1])
             F[j, i] = append([1], f[kf:kf+nf[j, i]])
@@ -531,7 +535,7 @@ def oe(nb, nf, nk, u, y):
     M /= Ny
     m.M = M
     m.setcov(sol, inv(M)/Ny, sig)
-    m.setparameters(theta)
+    m.setparameters(array(parb+parf))
     return m
 
 def bj(nb, nc, nd, nf, nk, u, y):
@@ -590,6 +594,11 @@ def bj(nb, nc, nd, nf, nk, u, y):
     C = empty((ny, ), dtype=object)
     D = empty((ny, ), dtype=object)
     F = empty((ny, nu), dtype=object)
+    # Parameter
+    parb = []
+    parc = []
+    pard = []
+    parf = []
     # TODO: Verify a way to compute an ARMA process
     for j in range(0, ny):
         thetaf = []
@@ -624,6 +633,8 @@ def bj(nb, nc, nd, nf, nk, u, y):
         #B[j] = append(zeros((1, nk[j])), theta[nf[j]:nf[j]+nb[j]+1])
         C[j] = append([1], theta[sum(nf[j])+sum(nb[j]+1):nc[j][0]+sum(nf[j])+sum(nb[j]+1)])
         D[j] = append([1], theta[nc[j][0]+sum(nf[j])+sum(nb[j]+1):nd[j][0]+nc[j][0]+sum(nf[j])+sum(nb[j]+1)])
+        parc += C[j][1:].tolist()
+        pard += D[j][1:].tolist()
         #F[j] = append([1], theta[0:nf[j]])
         F_ = theta[0:sum(nf[j])]
         B_ = theta[sum(nf[j]):sum(nf[j])+sum(nb[j]+1)]
@@ -632,6 +643,8 @@ def bj(nb, nc, nd, nf, nk, u, y):
         for i in range(0, nu):
             F[j, i] = append([1], F_[kf:kf+nf[j, i]])
             B[j, i] = append(zeros((1, nk[j, i])), B_[kb:kb+nb[j, i]+1])
+            parf += F[j, i][1:].tolist()
+            parb += B_[kb:kb+nb[j, i]+1].tolist()
             kf += nf[j, i]
             kb += nb[j, i] + 1
         # Model
