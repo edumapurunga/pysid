@@ -649,7 +649,67 @@ def bj(nb, nc, nd, nf, nk, u, y):
             kb += nb[j, i] + 1
         # Model
     m = polymodel('boxjenkins', None, B, C, D, F, nk, db+dc+dd+df, (u, y), nu, ny, 1)
-    m.setparameters(theta)
+    # Set the parameters
+    m.setparameters(array(parb + parc + pard + parf))
+    # Get the prediction error
+    ehat = zeros((Ny, ny))
+    for k in range(ny):
+        ehat[:, k] = lfilter(D[k], C[k], y[:, k], axis=0)
+        for i in range(nu):
+            ehat[:, k] -= lfilter(convolve(B[k, i], D[k]), convolve(C[k], F[k, i]), u[:, i], axis=0)
+    # Get covariance of ehat
+    sig = (ehat.T @ ehat)/Ny
+    # Inverse of sig
+    isig = inv(sig)
+    # Get covariance:
+    L = amax([amax(nf), amax(nb + nk), amax(nc), amax(nd)])
+    Iny = eye(ny)
+    psiy = zeros(((Ny-L)*ny, df))
+    psiu = zeros(((Nu-L)*ny, db))
+    psiec = zeros(((Nu-L)*ny, dc))
+    psied = zeros(((Nu-L)*ny, dd))
+    kb = 0
+    kc = 0
+    kd = 0
+    kf = 0
+    # Output regressors and Input Regressors
+    for i in range(0, ny):
+        kw = 0
+        # Get filtered signals
+        uf = zeros((Ny, nu))
+        w = zeros((Ny, 1))
+        wf = zeros((Ny, nu))
+        ef = lfilter([1], C[i], ehat, axis=0)
+        psiec[:, kc:kc+nc[i][i]] = toeplitz(ef[L-1:-1, i], ef[L-nc[i][i]:L, i][::-1])
+        kc += nc[i][i]
+        # Input
+        for j in range(0, nu):
+            if (nb[i, j] > -1):
+                w[:, 0] += lfilter(B[i, j], F[i, j], u[:, j], axis=0)
+                wf[:, kw] = lfilter(convolve(B[i, j], D[i]),
+                                    convolve(convolve(F[i, j], F[i, j]), C[i]),
+                                             u[:, j], axis=0)
+                uf[:, kw] = lfilter(D[i], convolve(F[i, j], C[i]), u[:, j], axis=0)
+
+                psiu[:, kb:kb+nb[i, j]+1] = kron(toeplitz(uf[L-nk[i, j]:Nu-nk[i, j], j], uf[L-nk[i, j]-nb[i, j]:L-nk[i, j]+1, j][::-1]), Iny[:, i:i+1])
+                psiy[:, kf:kf+nf[i,j]] = kron(-toeplitz(wf[L-1:-1, kw], wf[L-nf[i, j]:L, kw][::-1]), Iny[:, i:i+1])
+                kb += nb[i, j] + 1
+                kf += nf[i, j]
+                kw += 1
+        # Get the last one
+        vf = lfilter([1], C[i], w-y[:, i:i+1], axis=0)
+        psied[:, kd:kd+nd[i][i]] = toeplitz(vf[L-1:-1, i], vf[L-nd[i][i]:L, i][::-1])
+        kd += nd[i][i]
+    # Make the information matrix
+    psi = concatenate((psiu, psiec, psied, psiy), axis=1)
+    # Get gradient of the prediction error
+    # Initialize information matrix
+    M = zeros((df + db + dc + dd, df + db + dc + dd))
+    for k in range(0, psi.shape[0], ny):
+        M += psi[k:k+ny, :].T @ isig @ psi[k:k+ny, :]
+    M /= Ny
+    m.M = M
+    m.setcov(sol, inv(M)/Ny, sig)
     return m
 
 # %% Testing functions
