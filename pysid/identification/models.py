@@ -27,7 +27,9 @@ class polymodel():
         self.ts = ts
 
         # TODO: Ensure that setcov() is always called in pemethod.py
+        self.parameters = None
         self.ecov = None
+        self.residuals = None
         self.M = None
 
     # Iterable
