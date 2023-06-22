@@ -680,8 +680,8 @@ def bj(nb, nc, nd, nf, nk, u, y):
         w = zeros((Ny, 1))
         wf = zeros((Ny, nu))
         ef = lfilter([1], C[i], ehat, axis=0)
-        psiec[:, kc:kc+nc[i][i]] = toeplitz(ef[L-1:-1, i], ef[L-nc[i][i]:L, i][::-1])
-        kc += nc[i][i]
+        psiec[:, kc:kc+nc[i][0]] = kron(toeplitz(ef[L-1:-1, i], ef[L-nc[i][0]:L, i][::-1]), Iny[:, i:i+1])
+        kc += nc[i][0]
         # Input
         for j in range(0, nu):
             if (nb[i, j] > -1):
@@ -698,8 +698,8 @@ def bj(nb, nc, nd, nf, nk, u, y):
                 kw += 1
         # Get the last one
         vf = lfilter([1], C[i], w-y[:, i:i+1], axis=0)
-        psied[:, kd:kd+nd[i][i]] = toeplitz(vf[L-1:-1, i], vf[L-nd[i][i]:L, i][::-1])
-        kd += nd[i][i]
+        psied[:, kd:kd+nd[i][0]] = kron(toeplitz(vf[L-1:-1, 0], vf[L-nd[i][0]:L, 0][::-1]), Iny[:, i:i+1])
+        kd += nd[i][0]
     # Make the information matrix
     psi = concatenate((psiu, psiec, psied, psiy), axis=1)
     # Get gradient of the prediction error
