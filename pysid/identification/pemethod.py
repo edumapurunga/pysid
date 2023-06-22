@@ -249,7 +249,7 @@ def arx(na, nb, nk, u, y, opt=0):
         M += phi[k:k+ny, :].T @ isig @ phi[k:k+ny, :]
     M /= Ny # phi.T @ inv(sig) @ phi
     m.setcov(V**2/Ny, inv(M)/Ny, sig)
-    m.setparameters(array(a.tolist() + b.tolist())) #m.parameters = array(a.tolist() + b.tolist())
+    m.setparameters(array(a.tolist() + b.tolist()))
     return m
 
 def armax(na, nb, nc, nk, u, y):
@@ -534,7 +534,7 @@ def oe(nb, nf, nk, u, y):
         M += psi[k:k+ny, :].T @ isig @ psi[k:k+ny, :]
     M /= Ny
     m.M = M
-    m.setcov(sol, inv(M)/Ny, sig)
+    m.setcov(sol.cost, inv(M)/Ny, sig)
     m.setparameters(array(parb+parf))
     return m
 
@@ -591,8 +591,8 @@ def bj(nb, nc, nd, nf, nk, u, y):
         return e
     # Initial Guess
     B = empty((ny, nu), dtype=object)
-    C = empty((ny, ), dtype=object)
-    D = empty((ny, ), dtype=object)
+    C = empty((ny,1), dtype=object)
+    D = empty((ny,1), dtype=object)
     F = empty((ny, nu), dtype=object)
     # Parameter
     parb = []
@@ -631,8 +631,8 @@ def bj(nb, nc, nd, nf, nk, u, y):
         sol = least_squares(pe, thetai, args=(nf[j], nb[j], nc[j][0], nd[j][0], nk[j], u.reshape(Nu, nu), y[:,j]))
         theta = sol.x
         #B[j] = append(zeros((1, nk[j])), theta[nf[j]:nf[j]+nb[j]+1])
-        C[j] = append([1], theta[sum(nf[j])+sum(nb[j]+1):nc[j][0]+sum(nf[j])+sum(nb[j]+1)])
-        D[j] = append([1], theta[nc[j][0]+sum(nf[j])+sum(nb[j]+1):nd[j][0]+nc[j][0]+sum(nf[j])+sum(nb[j]+1)])
+        C[j,0] = append([1], theta[sum(nf[j])+sum(nb[j]+1):nc[j][0]+sum(nf[j])+sum(nb[j]+1)])
+        D[j,0] = append([1], theta[nc[j][0]+sum(nf[j])+sum(nb[j]+1):nd[j][0]+nc[j][0]+sum(nf[j])+sum(nb[j]+1)])
         parc += C[j][1:].tolist()
         pard += D[j][1:].tolist()
         #F[j] = append([1], theta[0:nf[j]])

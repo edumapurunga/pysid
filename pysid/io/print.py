@@ -162,7 +162,7 @@ def print_poly(P,dim,name,prec=3):
     print("\n")
 
 
-def print_model(model,prec=3,names=['A','B','C','D','F']):
+def print_model(model,prec=3,only_polynomials=False):
     """
     Prints the set of polynomials that define a given model.
 
@@ -172,12 +172,20 @@ def print_model(model,prec=3,names=['A','B','C','D','F']):
         Identification model object containing a set of polynomials.
     prec : integer, optional
         Decimal precision for the coefficients. Default is prec = 3.
-    names : list of strings
-        Name displayed for each polynomial in the model. Default is 'A','B','C','D','F']
     Returns
-    -------
     
     """
+    names = []
+    if model.A != None:
+        names.append('A')
+    if model.B != None:
+        names.append('B')
+    if model.C != None:
+        names.append('C')
+    if model.D != None:
+        names.append('D')
+    if model.F != None:
+        names.append('F')
     # Model should be a pysid.identification.models.polymodel() object
     index = 0
     ny, nu = model.ny, model.nu
@@ -187,12 +195,13 @@ def print_model(model,prec=3,names=['A','B','C','D','F']):
             print_poly(poly,dims[index],names[index],prec)
             index = index + 1
 
-    if hasattr(model, 'costfunction'):
-        print(f'Cost function per sample: ' + coef_to_str(model.costfunction,prec))
-
-    if hasattr(model, 'P'):
-        print(f'Accuracy:')
-        if which('latex') is not None:
-            display(Math(matrix_to_str(model.P,prec)))
-        else:
-            print_matrix(model.P,prec)
+    if not only_polynomials:
+        if hasattr(model, 'costfunction'):
+            print(f'Cost function per sample: ' + coef_to_str(model.costfunction,prec))
+    
+        if hasattr(model, 'P'):
+            print(f'Accuracy:')
+            if which('latex') is not None:
+                display(Math(matrix_to_str(model.P,prec)))
+            else:
+                print_matrix(model.P,prec)
