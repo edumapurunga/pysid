@@ -633,8 +633,8 @@ def bj(nb, nc, nd, nf, nk, u, y):
         #B[j] = append(zeros((1, nk[j])), theta[nf[j]:nf[j]+nb[j]+1])
         C[j,0] = append([1], theta[sum(nf[j])+sum(nb[j]+1):nc[j][0]+sum(nf[j])+sum(nb[j]+1)])
         D[j,0] = append([1], theta[nc[j][0]+sum(nf[j])+sum(nb[j]+1):nd[j][0]+nc[j][0]+sum(nf[j])+sum(nb[j]+1)])
-        parc += C[j][1:].tolist()
-        pard += D[j][1:].tolist()
+        parc += C[j, 0][1:].tolist()
+        pard += D[j, 0][1:].tolist()
         #F[j] = append([1], theta[0:nf[j]])
         F_ = theta[0:sum(nf[j])]
         B_ = theta[sum(nf[j]):sum(nf[j])+sum(nb[j]+1)]
@@ -654,9 +654,10 @@ def bj(nb, nc, nd, nf, nk, u, y):
     # Get the prediction error
     ehat = zeros((Ny, ny))
     for k in range(ny):
-        ehat[:, k] = lfilter(D[k], C[k], y[:, k], axis=0)
+        ehat[:, k] = lfilter(D[k, 0], C[k, 0], y[:, k], axis=0)
         for i in range(nu):
-            ehat[:, k] -= lfilter(convolve(B[k, i], D[k]), convolve(C[k], F[k, i]), u[:, i], axis=0)
+            ehat[:, k] -= lfilter(convolve(B[k, i], D[k, 0]),
+                                  convolve(C[k, 0], F[k, i]), u[:, i], axis=0)
     # Get covariance of ehat
     sig = (ehat.T @ ehat)/Ny
     # Inverse of sig
@@ -679,17 +680,17 @@ def bj(nb, nc, nd, nf, nk, u, y):
         uf = zeros((Ny, nu))
         w = zeros((Ny, 1))
         wf = zeros((Ny, nu))
-        ef = lfilter([1], C[i], ehat, axis=0)
+        ef = lfilter([1], C[i, 0], ehat, axis=0)
         psiec[:, kc:kc+nc[i][0]] = kron(toeplitz(ef[L-1:-1, i], ef[L-nc[i][0]:L, i][::-1]), Iny[:, i:i+1])
         kc += nc[i][0]
         # Input
         for j in range(0, nu):
             if (nb[i, j] > -1):
                 w[:, 0] += lfilter(B[i, j], F[i, j], u[:, j], axis=0)
-                wf[:, kw] = lfilter(convolve(B[i, j], D[i]),
-                                    convolve(convolve(F[i, j], F[i, j]), C[i]),
+                wf[:, kw] = lfilter(convolve(B[i, j], D[i, 0]),
+                                    convolve(convolve(F[i, j], F[i, j]), C[i, 0]),
                                              u[:, j], axis=0)
-                uf[:, kw] = lfilter(D[i], convolve(F[i, j], C[i]), u[:, j], axis=0)
+                uf[:, kw] = lfilter(D[i, 0], convolve(F[i, j], C[i, 0]), u[:, j], axis=0)
 
                 psiu[:, kb:kb+nb[i, j]+1] = kron(toeplitz(uf[L-nk[i, j]:Nu-nk[i, j], j], uf[L-nk[i, j]-nb[i, j]:L-nk[i, j]+1, j][::-1]), Iny[:, i:i+1])
                 psiy[:, kf:kf+nf[i,j]] = kron(-toeplitz(wf[L-1:-1, kw], wf[L-nf[i, j]:L, kw][::-1]), Iny[:, i:i+1])
@@ -697,7 +698,7 @@ def bj(nb, nc, nd, nf, nk, u, y):
                 kf += nf[i, j]
                 kw += 1
         # Get the last one
-        vf = lfilter([1], C[i], w-y[:, i:i+1], axis=0)
+        vf = lfilter([1], C[i, 0], w-y[:, i:i+1], axis=0)
         psied[:, kd:kd+nd[i][0]] = kron(toeplitz(vf[L-1:-1, 0], vf[L-nd[i][0]:L, 0][::-1]), Iny[:, i:i+1])
         kd += nd[i][0]
     # Make the information matrix
