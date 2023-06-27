@@ -64,7 +64,7 @@ def filtmat(matrix, signal, diag=-1, isvec=True, isrational=False):
                 output[:, i] += lfilter(matrix[i, j][0], matrix[i, j][1], signal[:, j], axis = 0)
             else:
                 output[:, i] += lfilter(matrix[i, j], [1], signal[:, j], axis = 0)
-        if diag != -1:
+        if type(diag) != int:
             if isrational:
                 if isvec == True:
                     output[:, i] = lfilter(diag[i, 0][0], diag[i, 0][1], output[:, i], axis = 0)
