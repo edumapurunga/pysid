@@ -176,15 +176,15 @@ def print_model(model,prec=3,only_polynomials=False):
     
     """
     names = []
-    if model.A != None:
+    if any(model.A) != None:
         names.append('A')
-    if model.B != None:
+    if any(model.B) != None:
         names.append('B')
-    if model.C != None:
+    if any(model.C) != None:
         names.append('C')
-    if model.D != None:
+    if any(model.D) != None:
         names.append('D')
-    if model.F != None:
+    if any(model.F) != None:
         names.append('F')
     # Model should be a pysid.identification.models.polymodel() object
     index = 0
