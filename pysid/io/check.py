@@ -3,7 +3,7 @@
 """
 
 # Imports
-from numpy import array, amax, ndarray, expand_dims, size, shape
+from numpy import array, amax, ndarray, expand_dims, size, shape, floor
 # Variables
 __all__ = ['chckin']
 
@@ -54,7 +54,8 @@ def chckin(na, nb, nc, nd, nf, nk, u, y):
     # Different number of Data
     if Ny != Nu:
         raise Exception('Input and Output must be the same number of data samples')
-    if Ny < L:
+    #second case for when its not possible to make the high order model in armax
+    if Ny < L or int(floor((Nu - amax(nk)*(nu+1))/(nu+2))) <= 1:
         raise Exception('Not enough data for model identification')
     # Classify Into the structures: Initial Variables
     #isAR = True
