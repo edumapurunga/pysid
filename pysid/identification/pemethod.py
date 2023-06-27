@@ -307,7 +307,7 @@ def armax(na, nb, nc, nk, u, y):
         B_ = []
         E = copy(y[:,i:i+1])
         # High order model
-        ho = int(floor((Nu-2)/3)-amax(nk)) #order of the High order model
+        ho = int(floor((Nu - amax(nk)*(nu+1))/(nu+2)))
         if(ho > 50):
             ho = 50
         mho = arx(ho, [ho,]*nu, [1,]*nu, u, y[:, i:i+1])
