@@ -4,12 +4,12 @@
 """
 import pytest
 from numpy import array, ndarray, convolve, cos, sin, concatenate, zeros, dot, \
-    sqrt, pi, roots, abs, ones, amax, dot, append, reshape
+    sqrt, pi, roots, abs, ones, amax, append, reshape, isnan, isfinite, trim_zeros
 from numpy.random import rand, randn, randint
-from numpy.linalg import inv, cond
+from numpy.linalg import inv
 from scipy.signal import lfilter
 from pysid.identification.pemethod import arx, armax, bj, oe
-from pysid.identification.recursive import rls
+from pysid.identification.recursive import rls, els
 from pysid.io.print import print_model
 from scipy.stats import chi2
 
@@ -32,7 +32,7 @@ from scipy.stats import chi2
 # Defines a set of input and output data as a fixture
 
 def get_value_elipse(t, t0, P):
-    return (t - t0).T @ P @ (t - t0)
+    return (t - t0) @ P @ (t - t0).T
 
 def check_inside_elipse(chivalue, df, alfa=0.995):
     return chivalue < chi2.ppf(alfa, df=df)
@@ -69,6 +69,36 @@ def gen_stable_poly(order):
                 istable = True
 
     return A
+
+def gen_stable_model2x2(na):
+    stable = False
+    i = 1
+    A = zeros((2,2),dtype=object)
+    na = na + ones(na.shape,dtype=int)
+    while not stable:
+        A = zeros((2,2),dtype=object)
+        for i in range(2):
+            for j  in range(2):
+                if i == j:
+                    A[i,j] = gen_stable_poly(na[i,j])
+                else:
+                    A[i,j] = gen_stable_poly(na[i,j])
+                    A[i,j][0] = 0
+                    while not all(r < 1.0 for r in abs(roots(A[i,j]))):
+                        A[i,j] = gen_stable_poly(na[i,j])
+                        A[i,j][0] = 0
+
+        if(len(convolve(A[0,0], A[1,1]))>len(convolve(A[0,1], A[1,0]))):
+            det = convolve(A[0,0], A[1,1]) - \
+                concatenate(([0]*abs(len(convolve(A[0,1], A[1,0]))-len(convolve(A[0,0], A[1,1]))),convolve(A[0,1], A[1,0])))
+        else:
+            det = concatenate(([0]*abs(len(convolve(A[0,1], A[1,0]))-len(convolve(A[0,0], A[1,1]))),convolve(A[0,0], A[1,1]))) - \
+                convolve(A[0,1], A[1,0])
+
+        if all(r < 1.0 for r in abs(roots(det))):
+            stable = True
+    print(stable)
+    return A#,trim_zeros(det,'f')
 
 # -----------------Arx-----------------
 
@@ -231,7 +261,7 @@ def test_arx_mimo():
                 # [::-1] makes the array backwards
                 y[i,j] += dot(Ao[j,k][1:],-y[i-(len(Ao[j,k])-1):i,k][::-1])
             for k in range(nu):# for each input
-                y[i,j] += dot(Bo[k,j][nk[j,k]:],u[i-len(Bo[k,j][nk[j,k]:]):i,k][::-1])
+                y[i,j] += dot(Bo[j,k][nk[j,k]:],u[i-len(Bo[j,k][nk[j,k]:]):i,k][::-1])
         y[i,j] += e[i,j]
 
     t0 = array([])
@@ -240,7 +270,7 @@ def test_arx_mimo():
             t0 = concatenate((t0, Ao[i,j][1:]))
     for i in range(ny):
         for j in range(nu):
-            t0 = concatenate((t0, Bo[j,i][nk[i,j]:]))
+            t0 = concatenate((t0, Bo[i,j][nk[i,j]:]))
     m = arx(na,nb,nk,u,y)
     t = m.parameters
     chivalue = get_value_elipse(t, t0, inv(m.P))
@@ -274,43 +304,49 @@ def test_arx_random_siso():
     assert check_inside_elipse(chivalue, len(t))
 
 def test_arx_random_simo():
-    n = 5
-    ny = randint(2,n)                  #number of outputs
+    n = 10
+    ny = 2 #randint(2,n)                  #number of outputs
     nu = 1                             #number of inputs (single)
 
-    na = randint(3,n,(ny,ny)) #ny x ny
+    na = randint(2,n,(ny,ny)) #ny x ny
+    # na = array([[10, 10], [10, 10]]) #ok, não é um problema
 
     #Generate Polynomials
-    Ao = zeros((ny,ny),dtype=object)
-    for i in  range(ny):
-        for j in range(ny):
-            Ao[i,j] = gen_stable_poly(na[i,j])
-            if i != j:
-                Ao[i,j][0] = 0
+    # Ao = zeros((ny,ny),dtype=object)
+    # for i in  range(ny):
+    #     for j in range(ny):
+    #         Ao[i,j] = gen_stable_poly(na[i,j])
+    #         if i != j:
+    #             Ao[i,j][0] = 0
+    #             while not all(r < 1.0 for r in abs(roots(Ao[i,j]))):
+    #                 Ao[i,j] = gen_stable_poly(na[i,j])
+    #                 Ao[i,j][0] = 0
+    Ao = gen_stable_model2x2(na)
 
     Bo = zeros((ny,1), dtype=object)
-    nk = 1 + randint(0, n,(ny,nu))
+    nk = array([[randint(1, n)], [randint(1, n)]]) #1 + randint(0, n,(ny,nu))
     nb = array([],dtype=int)
     for i in range(ny):
-        nb = append(nb,min( na[i].min(), 1+randint(0,10) ))
+        nb = append(nb,1+randint(5,n))
         Boo = -1 + 2*randn(nb[i])
         Bo[i][0] = concatenate(([0,]*nk[i,0],Boo))
 
-    nb = reshape(nb, (ny,1)) #from (ny,) to (ny,1)  (ny = len(nb))
+    nb = reshape(nb, (ny,nu)) #from (ny,) to (ny,1) 
     N = 1000                              # Number of samples
-    u = -sqrt(3) + 2*sqrt(3)*rand(N, 1)   # Defines input signal
-    e = 0.01*randn(N, ny)                  # Emulates Gaussian white noise with std = 0.01
+    u = -sqrt(3) + 2*sqrt(3)*rand(N, nu)   # Defines input signal
+    e = 0.025*randn(N, ny)                  # Emulates Gaussian white noise with std = 0.01
 
     # Calculates the y ARX: G(q) = B(q)/A(q) and H(q) = 1/A(q)
-    y = zeros((N,ny),dtype=float) #y's, com ny linhas e N colunas, cada linha é uma saida
+    y = zeros((N,ny),dtype=float) #y's, com N rows and ny columns
     L = max(amax(na),amax(nb+nk)) #to know were to start
     for i in range(L,N):
         for j in range(ny): # for each output
             for k in range(ny): # to travel in cols of the Ao matrix
                 # [::-1] makes the array backwards
                 y[i,j] += dot(Ao[j,k][1:],-y[i-(len(Ao[j,k])-1):i,k][::-1])
-            y[i,j] += dot(Bo[j,0][nk[j,0]:],u[i-len(Bo[j,0][nk[j,0]:]):i,0][::-1]) 
-        y[i,j] += e[i,j]
+            for k in range(nu):# for each input
+                y[i,j] += dot(Bo[j,k][nk[j,k]:],u[i-len(Bo[j,k][nk[j,k]:]):i,k][::-1])
+            y[i,j] += e[i,j]
 
     t0 = array([])
     for i in range(ny):
@@ -318,10 +354,18 @@ def test_arx_random_simo():
             t0 = concatenate((t0, Ao[i,j][1:]))
     for i in range(ny):
         t0 = concatenate((t0, Bo[i,0][nk[i,0]:]))
-    m = arx(na-ones(na.shape,dtype=int),nb-ones(nb.shape,dtype=int),nk,u,y)
+    m = arx(na,nb-ones(nb.shape,dtype=int),nk,u,y)
     t = m.parameters
+    # for i in range(ny):
+    #     for j in range(ny):
+    #         print(abs(roots(Ao[i,j])))
+    print(na,"\n",nk)
+    print(t0.shape,t.shape)
+    for i in range(len(t)):
+        print(t[i],"\t ## \t", t0[i])
     chivalue = get_value_elipse(t, t0, inv(m.P))
     assert check_inside_elipse(chivalue, len(t))
+
 
 def test_arx_random_miso():
     n = 10
@@ -361,13 +405,13 @@ def test_arx_random_miso():
     assert check_inside_elipse(chivalue, len(t))
 
 def test_arx_random_mimo():
-    n = 6
+    n = 10
     ny = 2 #randint(2,n)        #number of outputs (single)
     nu = 2 #randint(2,n)        #number of inputs
 
-    nb = randint(3,n,(ny,nu)) #ny x nu
-    na = randint(3,n,(ny,ny)) #ny x ny
-    nk = 1 + randint(0, n,(ny,nu))
+    nb = 1 + randint(1,n,(ny,nu)) #ny x nu
+    na = 1 + randint(1,n,(ny,ny)) #ny x ny
+    nk = array([[1, 1], [1, 1]]) #1 + randint(0, n,(ny,nu)) 
     #nk[i,j] delay of uj input for yi output
     #nb[i,j] order of uj input for yi output
 
@@ -376,48 +420,68 @@ def test_arx_random_mimo():
 
 
     #Generate Polynomials
-    Ao = zeros((ny,ny),dtype=object)
-    for i in  range(ny):
-        for j in range(ny):
-            Ao[i,j] = gen_stable_poly(na[i,j])
-            if i != j:
-                Ao[i,j][0] = 0
+    # Ao = zeros((ny,ny),dtype=object)
+    # for i in  range(ny):
+    #     for j in range(ny):
+    #         Ao[i,j] = gen_stable_poly(na[i,j])
+    #         if i != j:
+    #             Ao[i,j][0] = 0
+    Ao = gen_stable_model2x2(na)
 
-    Bo = zeros((nu,ny), dtype=object)
+    Bo = zeros((ny,nu), dtype=object)
     u = zeros((N,nu), dtype=float)
 
     #Generates Bo's and the inputs
-    for i in range(nu):
-        for j in range(ny):
-            Boo = -1 + 2*randn(nb[j,i]) #generate B's
-            Bo[i,j] = concatenate(([0,]*nk[j,i],Boo))
-            u[:,i] = -sqrt(3) + 2*sqrt(3)*rand(N,)
+    for i in range(ny):
+        for j in range(nu):
+            Boo = -1 + 2*randn(nb[i,j]) #generate B's
+            Bo[i,j] = concatenate(([0,]*nk[i,j],Boo))
 
-    
+    u = -sqrt(3) + 2*sqrt(3)*rand(N, nu)   # Defines input signal
+
     # Calculates the y ARX: G(q) = B(q)/A(q) and H(q) = 1/A(q)
     y = zeros((N,ny),dtype=float) #y's, com ny linhas e N colunas, cada linha é uma saida
     L = max(amax(na),amax(nb+nk)) #to know were to start
+    print(Ao)
     for i in range(L,N):
         for j in range(ny): # for each output
             for k in range(ny): # to travel in cols of the Ao matrix
                 # [::-1] makes the array backwards
                 y[i,j] += dot(Ao[j,k][1:],-y[i-(len(Ao[j,k])-1):i,k][::-1])
             for k in range(nu):# for each input
-                y[i,j] += dot(Bo[k,j][nk[j,k]:],u[i-len(Bo[k,j][nk[j,k]:]):i,k][::-1])
-        y[i,j] += e[i,j]
+                y[i,j] += dot(Bo[j,k][nk[j,k]:],u[i-len(Bo[j,k][nk[j,k]:]):i,k][::-1])
+            y[i,j] += e[i,j]
 
+    for i in range(ny):
+        print(i,": Has NaN: ",isnan(y[:,i]).any()," Has Inf: ",isfinite(y[:,i]).any())
     t0 = array([])
     for i in range(ny):
         for j in range(ny):
             t0 = concatenate((t0, Ao[i,j][1:]))
     for i in range(ny):
         for j in range(nu):
-            t0 = concatenate((t0, Bo[j,i][nk[i,j]:]))
-    m = arx(na-ones(na.shape,dtype=int),nb-ones(nb.shape,dtype=int),nk,u,y)
+            t0 = concatenate((t0, Bo[i,j][nk[i,j]:]))
+    m = arx(na,nb-ones(nb.shape,dtype=int),nk,u,y)
     t = m.parameters
+    # print(Ao)
+    # print(na)
+    # print(Bo)
+    # print(nb)
+    # print(m.delay)
+    # print(t0.shape,t.shape)
+    for i in range(len(t)):
+        if i == sum(sum(na)):
+            print("--")
+        print(t[i],"\t ## \t", t0[i],end="")
+        print(f'\t{100*abs(t0[i]-t[i])/t0[i]:.2f}')
+        # if abs(t[i]-t0[i])/abs(t0[i]) < 0.25:
+        #     print("\tv")
+        # else:
+        #     print("\tx")
     chivalue = get_value_elipse(t, t0, inv(m.P))
     assert check_inside_elipse(chivalue, len(t))
 
+# test_arx_random_mimo()
 # -----------------Armax-----------------
 #SISO
 @pytest.fixture
@@ -459,10 +523,126 @@ def test_armax_siso(test_signals_armax_siso, test_polynomials_armax_siso):
     
     assert check_inside_elipse(chivalue, len(t)) # verifica se o theta esta dentro da elipse
 
+def test_armax_random_siso():
+    n = 10
+    ny = 1
+    nu = 1
+    na = 1 + randint(1, n)
+    nb = min(1 + randint(0, n), na)
+    nc = 1 + randint(1, n)
+    nk = 1 + randint(0, n)
+
+    # Generate polynomials
+    Ao = gen_stable_poly(na+1)
+    Boo = -1 + 2*randn(nb)
+    Bo = array([0,]*nk + Boo.tolist())
+    Co = gen_stable_poly(nc+1)
+
+    N = 1000                              # Number of samples
+    u = -sqrt(3) + 2*sqrt(3)*rand(N, nu)   # Defines input signal
+    e = 0.05*randn(N, ny)                  # Emulates Gaussian white noise with std = 0.01
+
+    # Calculates the y ARX: G(q) = B(q)/A(q) and H(q) = 1/A(q)
+    y = lfilter(Bo, Ao, u, axis=0) + lfilter(Co, Ao, e, axis=0)
+    t0 = array(Ao[1:].tolist() + Bo[nk:].tolist() + Co[1:].tolist())
+
+    m = armax(na, nb-1, nc, nk, u, y)
+    t = m.parameters
+    print("t",len(t),"t0",len(t0))
+    for i in range(len(t0)):
+        print(t[i],"\t ## \t", t0[i])
+    chivalue = get_value_elipse(t, t0, inv(m.P))
+    assert check_inside_elipse(chivalue, len(t))
 
 #SIMO
+
+def test_armax_random_simo():
+    n = 5
+    ny = 2 #randint(2,n)        #number of outputs (single)
+    nu = 1 #randint(2,n)        #number of inputs
+
+    nb =  randint(1,n,(ny,nu)) #ny x nu
+    na = randint(1,n,(ny,ny)) #ny x ny
+    nc = randint(1,n,(ny,1)) #1 x nu
+    nk = array([[1],[1]]) #1 + randint(0, n,(ny,nu))
+    #nk[i,j] delay of uj input for yi output
+    #nb[i,j] order of uj input for yi output
+
+    N = 1000                # Number of samples
+    e = 0.01*randn(N, ny)    # Emulates Gaussian white noise with std = 0.01
+
+
+    #Generate Polynomials
+    # Ao = zeros((ny,ny),dtype=object)
+    # for i in  range(ny):
+    #     for j in range(ny):
+    #         Ao[i,j] = gen_stable_poly(na[i,j])
+    #         if i != j:
+    #             Ao[i,j][0] = 0
+    Ao, det = gen_stable_model2x2(na)
+
+    Bo = zeros((ny,nu), dtype=object)
+    Co = zeros((ny,1), dtype=object)
+    u = zeros((N,nu), dtype=float)
+
+    #Generates Bo's and the inputs
+    for i in range(ny):
+        for j in range(nu):
+            Boo = -1 + 2*randn(nb[i,j]) #generate B's
+            Bo[i,j] = concatenate(([0,]*nk[i,j],Boo))
+    for i in range(ny):
+        Co[i,0] = gen_stable_poly(nc[i,0]+1)
+
+    u = -sqrt(3) + 2*sqrt(3)*rand(N, nu)   # Defines input signal
+
+    # Calculates the y ARX: G(q) = B(q)/A(q) and H(q) = 1/A(q)
+    y = zeros((N,ny),dtype=float) #y's, com ny linhas e N colunas, cada linha é uma saida
+    L = max(amax(na),amax(nb+nk),amax(nc)) #to know were to start
+    for i in range(L,N):
+        for j in range(ny): # for each output
+            for k in range(ny): # to travel in cols of the Ao matrix
+                # [::-1] makes the array backwards
+                y[i,j] += dot(Ao[j,k][1:],-y[i-(len(Ao[j,k])-1):i,k][::-1])
+            for k in range(nu):# for each input
+                y[i,j] += dot(Bo[j,k][nk[j,k]:],u[i-len(Bo[j,k][nk[j,k]:]):i,k][::-1])
+            y[i,j] += dot(Co[j,0][1:],e[i-len(Co[j,0][1:]):i,j][::-1])
+    # print(det)
+    # y1 = lfilter(convolve(Ao[1,1], Bo[0,0]), det, u[:, 0:1], axis=0) + \
+    #      lfilter(convolve(-Ao[0,1], Bo[1,0]), det, u[:, 0:1], axis=0) + \
+    #      lfilter(convolve(Ao[1,1], Co[0,0]), det, e[:, 0:1], axis=0) + \
+    #      lfilter(convolve(-Ao[0,1], Co[1,0]), det, e[:, 1:2], axis=0)
+    # y2 = lfilter(convolve(-Ao[1,0], Bo[0,0]), det, u[:, 0:1], axis=0) + \
+    #      lfilter(convolve(Ao[0,0], Bo[1,0]), det, u[:, 0:1], axis=0) + \
+    #      lfilter(convolve(-Ao[1,0], Co[0,0]), det, e[:, 0:1], axis=0) + \
+    #      lfilter(convolve(Ao[0,0], Co[1,0]), det, e[:, 1:2], axis=0)
+
+    # y = concatenate((y1, y2), axis=1)
+
+    t0 = array([])
+    for i in range(ny):
+        for j in range(ny):
+            t0 = concatenate((t0, Ao[i,j][1:]))
+    for i in range(ny):
+        for j in range(nu):
+            t0 = concatenate((t0, Bo[i,j][nk[i,j]:]))
+    for i in range(ny):
+        t0 = concatenate((t0, Co[i,0][1:]))
+
+    m = armax(na,nb-ones(nb.shape,dtype=int),nc,nk,u,y)
+    t = m.parameters
+    # print("Ao: ",Ao)
+    # print("A: ",m.A,"\n\n")
+    # print(Bo)
+    # print(Co)
+    # print(na,nb,nc)
+    # print(t0.shape,t.shape)
+    for i in range(len(t)):
+        print(t[i],"\t ## \t", t0[i])
+    chivalue = get_value_elipse(t, t0, inv(m.P))
+    assert check_inside_elipse(chivalue, len(t))
+
 @pytest.fixture
-def test_polynomials_armax_simo(): #isso aqui define A e B para os testes q receberem test_polynomials
+def test_polynomials_armax_simo():
     A1o  = [1, -1.2, 0.36]
     A12o = [0, 0.09, -0.1]
     A2o  = [1, -1.6, 0.64]
@@ -528,8 +708,48 @@ def test_armax_simo(test_signals_armax_simo, test_polynomials_armax_simo):
     assert check_inside_elipse(chiv,len(t))
 
 #MISO
+def test_armax_random_miso():
+    n = 15
+    nu = 2
+    ny = 1
+
+    na = 1 + randint(1, n)
+    nb = randint(2,n,(ny,nu)) # 1 x nu
+    nc = 1 + randint(1, n)
+    nk = array([[randint(1, n),randint(1, n)]]) #+ randint(1, n)
+    # Generate polynomials
+    Ao = gen_stable_poly(na)
+    Co = gen_stable_poly(nc+1)
+
+    N = 1000                # Number of samples
+    e = 0.01*randn(N, ny)    # Emulates Gaussian white noise with std = 0.01
+
+    Bo = zeros((nu,1), dtype=object)
+    u = zeros((N,nu), dtype=float)
+
+    #Generates Bo's and the inputs
+    for i in range(nu):
+        Boo = -1 + 2*randn(nb[0,i]) #generate B's
+        Bo[i][0] = concatenate(([0,]*nk[0,i],Boo))
+        u[:,i] = -sqrt(3) + 2*sqrt(3)*rand(N,)
+
+
+    y = lfilter(Bo[0,0], Ao, u[:,0:1], axis=0) + lfilter(Bo[1,0], Ao, u[:,1:2], axis=0) + lfilter(Co, Ao, e[:,0:1], axis=0)
+    m = armax(na-1,nb-ones(nb.shape,dtype=int),nc,nk,u,y)
+    t = m.parameters
+
+    t0 = array([])
+    t0 = concatenate((t0, Ao[1:]))
+    for i in range(nu):
+        t0 = concatenate((t0, Bo[i,0][nk[0,i]:]))
+    t0 = concatenate((t0, Co[1:]))
+    for i in range(len(t0)):
+        print(t[i],"\t ## \t", t0[i])
+    chivalue = get_value_elipse(t, t0, inv(m.P))
+    assert check_inside_elipse(chivalue, len(t))
+
 @pytest.fixture
-def test_polynomials_armax_miso(): #isso aqui define A e B para os testes q receberem test_polynomials
+def test_polynomials_armax_miso():
     Ao  = [1, -1.2, 0.36]
     B0o = [0, 0.5, 0.4]
     B1o = [0, 0.2,-0.3]
@@ -551,24 +771,41 @@ def test_signals_armax_miso(test_polynomials_armax_miso):
     y = lfilter(B0o, Ao, u[:,0:1], axis=0) + lfilter(B1o, Ao, u[:,1:2], axis=0) + lfilter(Co, Ao, e[:,0:1], axis=0)
     return[u, y]
 
-def test_armax_miso(test_polynomials_armax_miso,test_signals_armax_miso):
-    Ao  = array(test_polynomials_armax_miso[0])
-    B0o = array(test_polynomials_armax_miso[1])
-    B1o = array(test_polynomials_armax_miso[2])
-    Co  = array(test_polynomials_armax_miso[3])
-    to = array(Ao[1:].tolist() + \
-               B0o[1:].tolist() + B1o[1:].tolist() + \
-               Co[1:].tolist())
+def test_armax_miso():
+    ny = 1
+    nu = 2
 
-    u = array(test_signals_armax_miso[0])
-    y = array(test_signals_armax_miso[1])
-    nk = [1, 1]
-    na = len(Ao)-1
-    nb = [len(B0o)-(nk[0]+1),len(B1o)-(nk[1]+1)]
-    nc = [len(Co)-1]
+    na = 2
+    nb = array([[1, 1]])
+    nk = array([[1, 1]])
+    nc = 2
+
+    Ao = zeros((ny,ny),dtype=object)
+    Bo = zeros((ny,nu),dtype=object)
+    Co = zeros((ny,1), dtype=object)
+    Ao[0,0] = [1, -1.2, 0.36]
+    Bo[0,0] = [0, 0.5, 0.4]
+    Bo[0,1] = [0, 0.2,-0.3]
+    Co[0,0] = [1, 0.8,-0.1]
+
+    N = 1000
+    u = -sqrt(3) + 2*sqrt(3)*rand(N, nu)
+    e = 0.00001*randn(N, ny)
+    t0 = concatenate((Ao[0,0][1:],
+               Bo[0,0][1:],Bo[0,1][1:], \
+               Co[0,0][1:]))
+
+    u = -sqrt(3) + 2*sqrt(3)*rand(N, nu)
+    e = 0.01*randn(N, ny)
+    y = lfilter(Bo[0,0], Ao[0,0], u[:,0:1], axis=0) + \
+        lfilter(Bo[0,1], Ao[0,0], u[:,1:2], axis=0) + \
+        lfilter(Co[0,0], Ao[0,0], e[:,0:1], axis=0)
+
     m = armax(na,nb,nc,nk,u,y)
     t = m.parameters
-    chiv = get_value_elipse(t,to,inv(m.P))
+    for i in range(len(t0)):
+       print(t0[i],"\t##\t",t[i])
+    chiv = get_value_elipse(t,t0,inv(m.P))
 
     assert check_inside_elipse(chiv,len(t))
 
@@ -626,32 +863,139 @@ def test_signals_armax_mimo(test_polynomials_armax_mimo):
     y = concatenate((y1, y2), axis=1)
     return [u,y]
 
-def test_armax_mimo(test_polynomials_armax_mimo,test_signals_armax_mimo):
-    A11o = test_polynomials_armax_mimo[0]
-    A12o = test_polynomials_armax_mimo[1]
-    A21o = test_polynomials_armax_mimo[2]
-    A22o = test_polynomials_armax_mimo[3]
-    B11o = test_polynomials_armax_mimo[4]
-    B12o = test_polynomials_armax_mimo[5]
-    B21o = test_polynomials_armax_mimo[6]
-    B22o = test_polynomials_armax_mimo[7]
-    C1o = test_polynomials_armax_mimo[8]
-    C2o = test_polynomials_armax_mimo[9]
-    to = array(A11o[1:].tolist() + A12o[1:].tolist() + A21o[1:].tolist() + A22o[1:].tolist() +\
-               B11o[1:].tolist() + B12o[1:].tolist() + B21o[1:].tolist() + B22o[1:].tolist() +\
-               C1o[1:].tolist() + C2o[1:].tolist())
+def test_armax_mimo():
+    ny = 2
+    nu = 2
 
-    u = array(test_signals_armax_mimo[0])
-    y = array(test_signals_armax_mimo[1])
+    na = [[2, 2], [2, 2]]
+    nb = [[1, 1], [1, 1]]
     nk = [[1, 1], [1, 1]]
-    na = [[len(A11o)-1,len(A12o)-1],[len(A21o)-1,len(A22o)-1]]
-    nb = [[len(B11o)-(nk[0][0]+1),len(B12o)-(nk[0][1]+1)],[len(B21o)-(nk[1][0]+1),len(B22o)-(nk[1][1]+1)]]
-    nc = [[len(C1o)-1],[len(C2o)-1]]
-    m = armax(na,nb,nc,nk,u,y)
-    t = m.parameters
+    nc = [[2], [2]]
 
-    chiv = get_value_elipse(t,to,inv(m.P))
+    Ao = array([[[1, -1.2, 0.36], [0, 0.09, -0.1]],
+                [[0, 0.2, -0.01],[1, -1.6, 0.64]]])
+
+    Bo = array([[[0, 0.5, 0.4], [0, 0.9, 0.8]],
+                [[0, 0.2,-0.3], [0, 0.1,-0.8]]])
+
+    Co = array([[[1, 0.8,-0.1]],
+                [[1, 0.9,-0.2]]])
+
+    N = 1000
+    # Take u as uniform
+    u = -1 + 2*rand(N, nu)
+    # Generate gaussian white noise with standat deviation 0.01
+    e = 0.01*randn(N, ny)
+
+    det = convolve(Ao[0,0], Ao[1,1]) - convolve(Ao[0,1], Ao[1,0]) 
+    y1 = lfilter(convolve(Ao[1,1], Bo[0,0]), det, u[:, 0:1], axis=0) + \
+         lfilter(convolve(-Ao[0,1], Bo[1,0]), det, u[:, 0:1], axis=0) + \
+         lfilter(convolve(Ao[1,1], Bo[0,1]), det, u[:, 1:2], axis=0) + \
+         lfilter(convolve(-Ao[0,1], Bo[1,1]), det, u[:, 1:2], axis=0) + \
+         lfilter(convolve(Ao[1,1], Co[0,0]), det, e[:, 0:1], axis=0) + \
+         lfilter(convolve(-Ao[0,1], Co[1,0]), det, e[:, 1:2], axis=0)
+    y2 = lfilter(convolve(-Ao[1,0], Bo[0,0]), det, u[:, 0:1], axis=0) + \
+         lfilter(convolve(Ao[0,0], Bo[1,0]), det, u[:, 0:1], axis=0) + \
+         lfilter(convolve(-Ao[1,0], Bo[0,1]), det, u[:, 1:2], axis=0) + \
+         lfilter(convolve(Ao[0,0], Bo[1,1]), det, u[:, 1:2], axis=0) + \
+         lfilter(convolve(-Ao[1,0], Co[0,0]), det, e[:, 0:1], axis=0) + \
+         lfilter(convolve(Ao[0,0], Co[1,0]), det, e[:, 1:2], axis=0)
+
+    y = concatenate((y1, y2), axis=1)
+    # m = armax(na,nb,nc,nk,u,y)
+    m = els(na,nb,nc,nk,u,y)
+    t = m.parameters
+    t0 = array([])
+    for i in range(ny):
+        for j in range(ny):
+            t0 = concatenate((t0, Ao[i,j][1:]))
+    for i in range(ny):
+        for j in range(nu):
+            t0 = concatenate((t0, Bo[i,j][nk[i][j]:]))
+    for i in range(ny):
+            t0 = concatenate((t0, Co[i,0][1:]))
+    for i in range(len(t0)):
+        print(t0[i],"\t##\t",t[i])
+
+    chiv = get_value_elipse(t,t0,inv(m.P))
     assert check_inside_elipse(chiv,len(t))
+
+test_armax_mimo()
+
+def test_armax_random_mimo():
+    n = 5
+    ny = 2 #randint(2,n)        #number of outputs (single)
+    nu = 2 #randint(2,n)        #number of inputs
+
+    nb =  randint(1,n,(ny,nu)) #ny x nu
+    na = randint(1,n,(ny,ny)) #ny x ny
+    nc = randint(1,n,(ny,1)) #1 x nu
+    nk = 1 + randint(0, n,(ny,nu)) #array([[1,1],[1,1]])
+    #nk[i,j] delay of uj input for yi output
+    #nb[i,j] order of uj input for yi output
+
+    N = 1000                # Number of samples
+    e = 0.01*randn(N, ny)    # Emulates Gaussian white noise with std = 0.01
+
+
+    #Generate Polynomials
+    # Ao = zeros((ny,ny),dtype=object)
+    # for i in  range(ny):
+    #     for j in range(ny):
+    #         Ao[i,j] = gen_stable_poly(na[i,j])
+    #         if i != j:
+    #             Ao[i,j][0] = 0
+    Ao, det = gen_stable_model2x2(na)
+
+    Bo = zeros((ny,nu), dtype=object)
+    Co = zeros((ny,1), dtype=object)
+    u = zeros((N,nu), dtype=float)
+
+    #Generates Bo's and the inputs
+    for i in range(ny):
+        for j in range(nu):
+            Boo = -1 + 2*randn(nb[i,j]) #generate B's
+            Bo[i,j] = concatenate(([0,]*nk[i,j],Boo))
+    for i in range(ny):
+        Co[i,0] = gen_stable_poly(nc[i,0]+1)
+
+    u = -sqrt(3) + 2*sqrt(3)*rand(N, nu)   # Defines input signal
+
+    # Calculates the y ARX: G(q) = B(q)/A(q) and H(q) = 1/A(q)
+    y = zeros((N,ny),dtype=float) #y's, com ny linhas e N colunas, cada linha é uma saida
+    L = max(amax(na),amax(nb+nk),amax(nc)) #to know were to start
+    for i in range(L,N):
+        for j in range(ny): # for each output
+            for k in range(ny): # to travel in cols of the Ao matrix
+                # [::-1] makes the array backwards
+                y[i,j] += dot(Ao[j,k][1:],-y[i-(len(Ao[j,k])-1):i,k][::-1])
+            for k in range(nu):# for each input
+                y[i,j] += dot(Bo[j,k][nk[j,k]:],u[i-len(Bo[j,k][nk[j,k]:]):i,k][::-1])
+            y[i,j] += dot(Co[j,0][1:],e[i-len(Co[j,0][1:]):i,j][::-1])
+    
+    t0 = array([])
+    for i in range(ny):
+        for j in range(ny):
+            t0 = concatenate((t0, Ao[i,j][1:]))
+    for i in range(ny):
+        for j in range(nu):
+            t0 = concatenate((t0, Bo[i,j][nk[i,j]:]))
+    for i in range(ny):
+        t0 = concatenate((t0, Co[i,0][1:]))
+
+    m = armax(na,nb-ones(nb.shape,dtype=int),nc,nk,u,y)
+    t = m.parameters
+    # print("Ao: ",Ao)
+    # print("A: ",m.A,"\n\n")
+    # print(Bo)
+    # print(Co)
+    # print(na,nb,nc)
+    # print(t0.shape,t.shape)
+    for i in range(len(t)):
+        print(t[i],"\t ## \t", t0[i])
+    chivalue = get_value_elipse(t, t0, inv(m.P))
+    assert check_inside_elipse(chivalue, len(t))
+
 
 # Test OE
 @pytest.fixture
@@ -698,6 +1042,309 @@ def test_oe_siso(test_signals_oe_siso, test_polynomials_oe_siso):
     chivalue = get_value_elipse(t, t0, inv(m.P))
     assert check_inside_elipse(chivalue, len(t))
 
+def test_oe_random_siso():
+    n = 10
+    ny = 1
+    nu = 1
+    nf = 1 + randint(1, n)  #,(ny,ny))
+    nb = 1 + randint(1, n)  # ,(ny,nu))
+    nk = 1 + randint(1, n)  #,(ny,nu))
+    N = 1000
+    e = 0.01*randn(N,)    # Emulates Gaussian white noise with std = 0.01
+
+    Fo = gen_stable_poly(nf+1)
+    Boo = -1 + 2*randn(nb)
+    Bo = array([0,]*nk + Boo.tolist())
+
+    u = -sqrt(3) + 2*sqrt(3)*rand(N,)
+
+    y = lfilter(Bo, Fo, u, axis=0) + e
+    #Estimate the model and get only the parameters
+    print(y.shape,u.shape)
+    m = oe(nb-1, nf, nk, u, y)
+    t = m.parameters
+
+    t0 = array(Bo[nk:].tolist() + Fo[1:].tolist())
+    # t0 = array(Fo[1:].tolist() + Bo[nk:].tolist())
+    for i in range(len(t0)):
+        print(t[i],"\t ## \t", t0[i])
+    chivalue = get_value_elipse(t, t0, inv(m.P))
+    assert check_inside_elipse(chivalue, len(t))
+
+# MISO
+def test_oe_miso():
+    ny = 1
+    nu = 2
+
+    nf = [[2 ,2]]
+    nb = [[1, 1]]
+    nk = [[1, 1]]
+
+    Fo = array([[[1, -1.2, 0.36],[1, -1.4, 0.49]]])
+
+    Bo = array([[[0, 0.5, 0.1],[0, 0.3,-0.2]]])
+    print(Bo[0,1])
+    N = 1000
+    #Take u as uniform
+    u = -1 + 2*rand(N, nu)
+    #Generate gaussian white noise with standard deviation 0.1
+    e = 0.01*randn(N, ny)
+    #Calculate the y through S (OE: G(q) = B(q)/F(q) and H(q) = 1)
+    y = lfilter(Bo[0,0], Fo[0,0], u[:,0:1], axis=0) + lfilter(Bo[0,1], Fo[0,1], u[:,1:2], axis=0) + e
+    #Estimate the model and get only the parameters
+    m = oe(nb, nf, nk, u, y)
+    t = m.parameters
+
+    t0 = array([])
+    for i in range(ny):
+        for j in range(nu):
+            t0 = concatenate((t0, Fo[i,j][1:]))
+    for i in range(ny):
+        for j in range(nu):
+            t0 = concatenate((t0, Bo[i,j][nk[i][j]:]))
+    for i in range(len(t0)):
+        print(t0[i],"\t##\t",t[i])
+
+    chiv = get_value_elipse(t,t0,inv(m.P))
+    assert check_inside_elipse(chiv,len(t))
+
+def test_oe_random_miso():
+    n = 10
+    ny = 1
+    nu = 1 + randint(1, n)
+    nf = 1 + randint(1, n,(ny,nu))  #,(ny,nu))
+    nb = 1 + randint(1, n,(ny,nu))  # ,(ny,nu))
+    nk = 1 + randint(1, n,(ny,nu))  #,(ny,nu))
+    N = 1000
+    e = 0.01*randn(N,ny)    # Emulates Gaussian white noise with std = 0.01
+
+    Fo = zeros((ny,nu), dtype=object)
+    Bo = zeros((ny,nu), dtype=object)
+    u = zeros((N,nu), dtype=float)
+
+    #Generates Bo's and the inputs
+    for i in range(nu):
+        Boo = -1 + 2*randn(nb[0,i]) #generate B's
+        Bo[0,i] = concatenate(([0,]*nk[0,i],Boo))
+        u[:,i] = -sqrt(3) + 2*sqrt(3)*rand(N,)
+
+    for i in range(ny):
+        for j in range(nu):
+            Fo[i,j] = gen_stable_poly(nf[i,j]+1)
+
+    y = e[:,0:1]
+    for i in range(nu):
+        y += lfilter(Bo[0,i], Fo[0,i], u[:,i:i+1], axis=0)
+    # y = lfilter(Bo[0,0], Fo[0,0], u[:,0:1], axis=0) + lfilter(Bo[0,1], Fo[0,1], u[:,1:2], axis=0) + e[:,0:1]
+    #Estimate the model and get only the parameters
+    m = oe(nb-ones(nb.shape,dtype=int), nf, nk, u, y)
+    t = m.parameters
+
+    t0 = array([])
+
+    for i in range(nu):
+        t0 = concatenate((t0, Bo[0,i][nk[0,i]:]))
+    for i in range(ny):
+        for j in range(nu):
+            t0 = concatenate((t0, Fo[i,j][1:]))
+    for i in range(len(t0)):
+        print(t[i],"\t##\t",t0[i])
+
+    chiv = get_value_elipse(t,t0,inv(m.P))
+    assert check_inside_elipse(chiv,len(t))
+
+# SIMO
+
+def test_oe_simo():
+    ny = 2
+    nu = 1
+
+    nf = [[2],[2]]
+    nb = [[1],[1]]
+    nk = [[1],[1]]
+
+    Fo = array([[[1, -1.2, 0.36]],
+                [[1, -1.4, 0.49]]])
+
+    Bo = array([[[0, 0.5, 0.1]],
+                [[0, 0.3,-0.2]]])
+
+
+    N = 1000
+    #Take u as uniform
+    u = -1 + 2*rand(N, nu)
+    #Generate gaussian white noise with standard deviation 0.1
+    e = 0.01*randn(N, ny)
+    #Calculate the y through S (OE: G(q) = B(q)/F(q) and H(q) = 1)
+    y1 = lfilter(Bo[0,0], Fo[0,0], u[:,0:1], axis=0) + e[:,0:1]
+    y2 = lfilter(Bo[1,0], Fo[1,0], u[:,0:1], axis=0) + e[:,1:2]
+    y = concatenate((y1, y2), axis=1)
+    #Estimate the model and get only the parameters
+    m = oe(nb, nf, nk, u, y)
+    t = m.parameters
+
+    t0 = array([])
+    for i in range(ny):
+        for j in range(nu):
+            t0 = concatenate((t0, Fo[i,j][1:]))
+    for i in range(ny):
+        for j in range(nu):
+            t0 = concatenate((t0, Bo[i,j][nk[i][j]:]))
+    for i in range(len(t0)):
+        print(t0[i],"\t##\t",t[i])
+
+    chiv = get_value_elipse(t,t0,inv(m.P))
+    assert check_inside_elipse(chiv,len(t))
+
+def test_oe_random_simo():
+    n = 5
+    ny = 1 + randint(1, n)
+    nu = 1
+    nf = 1 + randint(1, n,(ny,nu))  #,(ny,nu))
+    nb = 1 + randint(1, n,(ny,nu))  # ,(ny,nu))
+    nk = 1 + randint(1, n,(ny,nu))  #,(ny,nu))
+    N = 1000
+    e = 0.01*randn(N,ny)    # Emulates Gaussian white noise with std = 0.01
+
+    Fo = zeros((ny,nu), dtype=object)
+    Bo = zeros((ny,nu), dtype=object)
+    u = zeros((N,nu), dtype=float)
+
+    #Generates Bo's and the inputs
+    for i in range(ny):
+        for j in range(nu):
+            Boo = -1 + 2*randn(nb[i,j]) #generate B's
+            Bo[i,j] = concatenate(([0,]*nk[i,j],Boo))
+            u[:,j] = -sqrt(3) + 2*sqrt(3)*rand(N,)
+
+    for i in range(ny):
+        for j in range(nu):
+            Fo[i,j] = gen_stable_poly(nf[i,j]+1)
+
+    yt = lfilter(Bo[0,0], Fo[0,0], u[:,0:1], axis=0) + e[:,0:0+1]
+    y = yt
+    for i in range(1,ny):
+        yt = lfilter(Bo[i,0], Fo[i,0], u[:,0:1], axis=0) + e[:,i:i+1]
+        y  = concatenate((y, yt), axis=1)
+
+    #Estimate the model and get only the parameters
+
+    m = oe(nb-ones(nb.shape,dtype=int), nf, nk, u, y)
+    t = m.parameters
+
+
+    t0 = array([])
+
+    for i in range(ny):
+        for j in range(nu):
+            t0 = concatenate((t0, Bo[i,j][nk[i,j]:]))
+    for i in range(ny):
+        for j in range(nu):
+            t0 = concatenate((t0, Fo[i,j][1:]))
+    for i in range(len(t0)):
+        print(t[i],"\t##\t",t0[i])
+
+    chiv = get_value_elipse(t,t0,inv(m.P))
+    assert check_inside_elipse(chiv,len(t))
+
+
+# MIMO
+
+def test_oe_mimo():
+    ny = 2
+    nu = 2
+
+    nf = [[2, 2], [2, 2]]
+    nb = [[1, 1], [1, 1]]
+    nk = [[1, 1], [1, 1]]
+
+    Fo = array([[[1, -1.2, 0.36], [1, -1.6, 0.84]],
+                [[1, -1.0, 0.25], [1, -1.4, 0.49]]])
+    Bo = array([[[0, 0.5, 0.1], [0, 0.8,-0.4]],
+                [[0, 0.7, 0.2], [0, 0.3,-0.2]]])
+
+    N = 1000
+    #Take u as uniform
+    u = -1 + 2*rand(N, nu)
+
+    e = 0.01*randn(N, ny)
+
+    y1 = lfilter(Bo[0,0], Fo[0,0], u[:,0:1], axis=0) + lfilter(Bo[0,1], Fo[0,1], u[:,1:2], axis=0) + e[:,0:1]
+    y2 = lfilter(Bo[1,0], Fo[1,0], u[:,0:1], axis=0) + lfilter(Bo[1,1], Fo[1,1], u[:,1:2], axis=0) + e[:,1:2]
+    y = concatenate((y1, y2), axis=1)
+
+    m = oe(nb, nf, nk, u, y)
+    t = m.parameters
+
+    to = array([])
+    for i in range(ny):
+        for j in range(nu):
+            to = concatenate((to, Fo[i,j][1:]))
+    for i in range(ny):
+        for j in range(nu):
+            to = concatenate((to, Bo[i,j][nk[i][j]:]))
+    for i in range(len(to)):
+        print(to[i],"\t##\t",t[i])
+
+    chiv = get_value_elipse(t,to,inv(m.P))
+    assert check_inside_elipse(chiv,len(t))
+
+def test_oe_random_mimo():
+    n = 5
+    ny = 1 + randint(1, n)
+    nu = 1 + randint(1, n)
+    nf = 1 + randint(1, n,(ny,nu))  #,(ny,nu))
+    nb = 1 + randint(1, n,(ny,nu))  # ,(ny,nu))
+    nk = 1 + randint(1, n,(ny,nu))  #,(ny,nu))
+    N = 1000
+    e = 0.01*randn(N,ny)    # Emulates Gaussian white noise with std = 0.01
+
+    Fo = zeros((ny,nu), dtype=object)
+    Bo = zeros((ny,nu), dtype=object)
+    u = zeros((N,nu), dtype=float)
+
+    #Generates Bo's and the inputs
+    for i in range(ny):
+        for j in range(nu):
+            Boo = -1 + 2*randn(nb[i,j]) #generate B's
+            Bo[i,j] = concatenate(([0,]*nk[i,j],Boo))
+            u[:,j] = -sqrt(3) + 2*sqrt(3)*rand(N,)
+
+    for i in range(ny):
+        for j in range(nu):
+            Fo[i,j] = gen_stable_poly(nf[i,j]+1)
+
+
+    yt = e[:,0:1]
+    for j in range(nu):
+        yt += lfilter(Bo[0,j], Fo[0,j], u[:,j:j+1], axis=0)
+    y = yt
+    for i in range(1,ny):
+        yt = e[:,i:i+1]
+        for j in range(nu):
+            yt += lfilter(Bo[i,j], Fo[i,j], u[:,j:j+1], axis=0)
+        y = concatenate((y, yt),axis = 1)
+    # y1 = lfilter(Bo[0,0], Fo[0,0], u[:,0:1], axis=0) + lfilter(Bo[0,1], Fo[0,1], u[:,1:2], axis=0) + e[:,0:1]
+    # y2 = lfilter(Bo[1,0], Fo[1,0], u[:,0:1], axis=0) + lfilter(Bo[1,1], Fo[1,1], u[:,1:2], axis=0) + e[:,1:2]
+    # y = concatenate((y1, y2), axis=1)
+    #Estimate the model and get only the parameters
+    m = oe(nb-ones(nb.shape,dtype=int), nf, nk, u, y)
+    t = m.parameters
+
+
+    t0 = array([])
+
+    for i in range(ny):
+        for j in range(nu):
+            t0 = concatenate((t0, Bo[i,j][nk[i,j]:]))
+    for i in range(ny):
+        for j in range(nu):
+            t0 = concatenate((t0, Fo[i,j][1:]))
+    for i in range(len(t0)):
+        print(t[i],"\t##\t",t0[i])
+
+    chiv = get_value_elipse(t,t0,inv(m.P))
+    assert check_inside_elipse(chiv,len(t))
 
 
 # -----------------Recursive Module-----------------
@@ -739,19 +1386,76 @@ def test_signals_bj_siso(test_polynomials_bj_siso):
     return [u,y]
 
 def test_bj_siso(test_signals_bj_siso,test_polynomials_bj_siso):
-    u = test_signals_bj_siso[0]
-    y = test_signals_bj_siso[1]
-    
-    Fo = array(test_polynomials_bj_siso[0])
-    Bo = array(test_polynomials_bj_siso[1])
-    Co = array(test_polynomials_bj_siso[2])
-    Do = array(test_polynomials_bj_siso[3])
-    nk = 1
-    e = 0.1*randn(len(u), 1)
+    ny = 1
+    nu = 1
 
-    m = bj(len(Bo)-(nk+1),len(Co),len(Do),len(Fo),nk,u,y)
-    yhat = lfilter(m.B[0,0], m.F[0,0], u, axis=0) + lfilter(m.C[0],m.D[0], e, axis=0)
-    # TODO
+    nf = 2
+    nb = 1
+    nc = 2
+    nd = 2
+    nk = 1
+
+    Fo  = [1, -1.2, 0.36]
+    Bo = [0, 0.5, 0.1]
+    Co = [1, 0.8, 0.2]
+    Do = [1, -1.6, 0.64]
+
+    N = 1000
+    #Take u as uniform
+    u = -1 + 2*randn(N, nu)
+
+    e = 0.1*randn(N, ny)
+
+    y = lfilter(Bo, Fo, u, axis=0) + lfilter(Co, Do, e, axis=0)
+    m = bj(nb, nc, nd, nf, nk, u, y)
+    t = m.parameters
+
+    to = array([])
+    to = concatenate((to, Fo[1:]))
+    to = concatenate((to, Bo[1:]))
+    to = concatenate((to, Co[1:]))
+    to = concatenate((to, Do[1:]))
+
+    chiv = get_value_elipse(t,to,inv(m.P))
+    assert check_inside_elipse(chiv,len(t))
+
+def test_bj_random_siso():
+    n = 2
+    ny = 1
+    nu = 1
+    nf = 2#1 + randint(1, n)  #,(ny,ny))
+    nb = 2 #+ randint(1, n)  # ,(ny,nu))
+    nc = 2#1 + randint(1, n)
+    nk = 1# + randint(1, n)  #,(ny,nu))
+    nd = 2#1 + randint(1, n)
+
+    N = 1000
+    e = 0.01*randn(N,)    # Emulates Gaussian white noise with std = 0.01
+
+    Fo = gen_stable_poly(nf+1).tolist()
+    Co = gen_stable_poly(nc+1).tolist()
+    Do = gen_stable_poly(nd+1).tolist()
+    Boo = -1 + 2*randn(nb)
+    Bo = array([0,]*nk + Boo.tolist()).tolist()
+    # Fo  = [1, -1.2, 0.36]
+    # Bo = [0, 0.5, 0.1]
+    # Co = [1, 0.8, 0.2]
+    # Do = [1, -1.6, 0.64]
+    u = -sqrt(3) + 2*sqrt(3)*rand(N,)
+
+    y = lfilter(Bo, Fo, u, axis=0) + lfilter(Co, Do, e, axis=0)
+    #Estimate the model and get only the parameters
+    print(Fo,Bo,Co,Do)
+    print(nf,nb,nc,nd)
+    m = bj(nb-1, nc, nd, nf, nk, u, y)
+    t = m.parameters
+    #ValueError: Residuals are not finite in the initial point
+    t0 = array(Bo[nk:] + Co[1:] + Do[1:] + Fo[1:])
+    for i in range(len(t0)):
+        print(t[i],"\t ## \t", t0[i])
+    chivalue = get_value_elipse(t, t0, inv(m.P))
+    assert check_inside_elipse(chivalue, len(t))
+
 
 #SIMO
 @pytest.fixture
@@ -788,32 +1492,116 @@ def test_signals_bj_simo(test_polynomials_bj_simo):
 
     return [u,y]
 
-def test_bj_simo(test_polynomials_bj_simo,test_signals_bj_simo):
-    u = array(test_signals_bj_simo[0])
-    y = array(test_signals_bj_simo[1])
+def test_bj_simo():
+    ny = 2
+    nu = 1
 
-    F1o = array(test_polynomials_bj_simo[0])
-    F2o = array(test_polynomials_bj_simo[1])
-    B1o = array(test_polynomials_bj_simo[2])
-    B2o = array(test_polynomials_bj_simo[3])
-    C1o = array(test_polynomials_bj_simo[4])
-    C2o = array(test_polynomials_bj_simo[5])
-    D1o = array(test_polynomials_bj_simo[6])
-    D2o = array(test_polynomials_bj_simo[7])
+    Fo = array([[[1, -1.2, 0.36]],[[1, -1.4, 0.49]]])
+    Bo = array([[[0, 0.5, 0.1]],[[0, 0.3,-0.2]]])
+    Co = array([[[1, 0.8, 0.16]],[[1, 0.9, 0.22]]])
+    Do = array([[[1, -1.8, 0.91]],[[1, -1.6, 0.8]]])
 
+    nf = [[2], [2]]
+    nb = [[1], [1]]
+    nc = [[2], [2]]
+    nd = [[2], [2]]
     nk = [[1], [1]]
-    nf = [[len(F1o)-1], [len(F2o)-1]]
-    nb = [[len(B1o)-(nk[0][0]+1)], [len(B2o)-(nk[1][0]+1)]]
-    nc = [[len(C1o)-1], [len(C2o)-1]]
-    nd = [[len(D1o)-1], [len(D2o)-1]]
-    e = 0.01*randn(len(u[:,0]), 1)
+
+
+    N = 1000
+    e = 0.01*randn(N, ny)
+    u = -1 + 2*randn(N, nu)
+
+    y1 = lfilter(Bo[0,0], Fo[0,0], u[:,0:1], axis=0) + lfilter(Co[0,0], Do[0,0], e[:,0:1], axis=0)
+    y2 = lfilter(Bo[1,0], Fo[1,0], u[:,0:1], axis=0) + lfilter(Co[1,0], Do[1,0], e[:,1:2], axis=0)
+    y = concatenate((y1, y2), axis=1)
 
     m = bj(nb, nc, nd, nf, nk, u, y)
-    y1 = lfilter(m.B[0,0], m.F[0,0], u[:,0:1], axis=0) + lfilter(m.C[0], m.D[0], e[:,0:1], axis=0)
-    y2 = lfilter(m.B[1,0], m.F[1,0], u[:,0:1], axis=0) + lfilter(m.C[1], m.D[1], e[:,1:2], axis=0)
-    yhat = concatenate((y1, y2), axis=1)
-    #TODO
+    t = m.parameters
 
+    to = array([])
+    for iy in range(ny):
+        for iu in range(nu):
+            to = concatenate((to, Fo[iy,iu][1:]))
+    for iy in range(ny):
+        for iu in range(nu):
+            to = concatenate((to, Bo[iy,iu][nk[iy][iu]:]))
+    for iy in range(ny):
+        for iu in range(nu):
+            to = concatenate((to, Co[iy,iu][1:]))
+    for iy in range(ny):
+        for iu in range(nu):
+            to = concatenate((to, Do[iy,iu][1:]))
+
+    chiv = get_value_elipse(t,to,inv(m.P))
+    assert check_inside_elipse(chiv,len(t))
+
+def test_bj_random_simo():
+    n = 2
+    ny = 2
+    nu = 1
+    nf = 1 + randint(1, n ,(ny,nu))
+    nb = 1 + randint(1, n ,(ny,nu))
+    nc = 1 + randint(1, n ,(ny,nu))
+    nk = 1 + randint(1, n,(ny,nu))
+    nd = 1 + randint(1, n ,(ny,nu))
+
+    N = 1000
+    e = 0.01*randn(N,ny)    # Emulates Gaussian white noise with std = 0.01
+
+    Fo = zeros((ny,nu), dtype=object)
+    Bo = zeros((ny,nu), dtype=object)
+    Co = zeros((ny,nu), dtype=object)
+    Do = zeros((ny,nu), dtype=object)
+    u = zeros((N,nu), dtype=float)
+
+    #Generates Bo's and the inputs
+    for i in range(ny):
+        for j in range(nu):
+            Boo = -1 + 2*randn(nb[i,j]) #generate B's
+            Bo[i,j] = concatenate(([0,]*nk[i,j],Boo))
+            u[:,j] = -sqrt(3) + 2*sqrt(3)*rand(N,)
+
+    for i in range(ny):
+        for j in range(nu):
+            Fo[i,j] = gen_stable_poly(nf[i,j]+1)
+            Co[i,j] = gen_stable_poly(nc[i,j]+1)
+            Do[i,j] = gen_stable_poly(nd[i,j]+1)
+
+
+    # Fo =  gen_stable_poly(nf+1).tolist()
+    # Co = gen_stable_poly(nc+1).tolist()
+    # Do = gen_stable_poly(nd+1).tolist()
+    # Boo = -1 + 2*randn(nb)
+    # Bo = array([0,]*nk + Boo.tolist()).tolist()
+
+    print(Bo[0,0])
+    print(Fo[0,0])
+    print(Co[0,0])
+    print(Do[0,0])
+    y1 = lfilter(Bo[0,0], Fo[0,0], u[:,0:1], axis=0) + lfilter(Co[0,0], Do[0,0], e[:,0:1], axis=0)
+    y2 = lfilter(Bo[1,0], Fo[1,0], u[:,0:1], axis=0) + lfilter(Co[1,0], Do[1,0], e[:,1:2], axis=0)
+    y = concatenate((y1, y2), axis=1)
+
+    m = bj(nb-ones(nb.shape,dtype=int), nc, nd, nf, nk, u, y)
+    t = m.parameters
+
+    to = array([])
+    for iy in range(ny):
+        for iu in range(nu):
+            to = concatenate((to, Bo[iy,iu][nk[iy][iu]:]))
+    for iy in range(ny):
+        for iu in range(nu):
+            to = concatenate((to, Co[iy,iu][1:]))
+    for iy in range(ny):
+        for iu in range(nu):
+            to = concatenate((to, Do[iy,iu][1:]))
+    for iy in range(ny):
+        for iu in range(nu):
+            to = concatenate((to, Fo[iy,iu][1:]))
+
+    chiv = get_value_elipse(t,to,inv(m.P))
+    assert check_inside_elipse(chiv,len(t))
 # MISO
 
 @pytest.fixture
@@ -846,26 +1634,106 @@ def test_signals_bj_miso(test_polynomials_bj_miso):
 
     return [u,y]
 
-def test_bj_miso(test_polynomials_bj_miso,test_signals_bj_miso):
-    F1o = array(test_polynomials_bj_miso[0])
-    F2o = array(test_polynomials_bj_miso[1])
-    B1o = array(test_polynomials_bj_miso[2])
-    B2o = array(test_polynomials_bj_miso[3])
-    # Co  = array(test_polynomials_bj_miso[4])
-    # Do  = array(test_polynomials_bj_miso[5])
-    y = test_signals_bj_miso[1]
-    u = test_signals_bj_miso[0]
+def test_bj_miso():
+    ny = 1
+    nu = 2
 
-    nk = [1, 1]
-    nf = [len(F1o)-1, len(F2o)-1]
-    nb = [len(B1o)-(nk[0]+1), len(B2o)-(nk[1]+1)]
-    nc = [2]
-    nd = [2]
-    e = 0.01*randn(len(u[:,0]), 1)
+    Fo = array([[[1, -1.2, 0.36],[1, -1.4, 0.49]]])
+    Bo = array([[[0, 0.5, 0.1],[0, 0.3,-0.2]]])
+    Co = array([[[1, 0.8, 0.16]]])
+    Do = array([[[1, -1.8, 0.91]]])
 
-    m = bj(nb,nc,nd,nf,nk,u,y)
-    yhat = lfilter(m.B[0,0], m.F[0,0], u[:,0:1], axis=0) + lfilter(m.B[0,1], m.F[0,1], u[:,1:2], axis=0) + lfilter(m.C[0], m.D[0], e[:,0:1], axis=0)
-    #TODO
+    nf = [[2, 2]]
+    nb = [[1, 1]]
+    nc = [[2, 2]]
+    nd = [[2, 2]]
+    nk = [[1, 1]]
+
+    N = 1000
+    #Take u as uniform
+    u = -1 + 2*randn(N, nu)
+    e = 0.01*randn(N, ny)
+
+    y = lfilter(Bo[0,0], Fo[0,0], u[:,0:1], axis=0) + \
+        lfilter(Bo[0,1], Fo[0,1], u[:,1:2], axis=0) + \
+        lfilter(Co[0,0], Do[0,0], e[:,0:1], axis=0)
+
+    m = bj(nb, nc, nd, nf, nk, u, y)
+    t = m.parameters
+
+    to = array([])
+    for iy in range(ny):
+        for iu in range(nu):
+            to = concatenate((to, Fo[iy,iu][1:]))
+    for iy in range(ny):
+        for iu in range(nu):
+            to = concatenate((to, Bo[iy,iu][nk[iy][iu]:]))
+    for iy in range(ny):
+        for iu in range(nu):
+            to = concatenate((to, Co[iy,iu][1:]))
+    for iy in range(ny):
+        for iu in range(nu):
+            to = concatenate((to, Do[iy,iu][1:]))
+
+    chiv = get_value_elipse(t,to,inv(m.P))
+    assert check_inside_elipse(chiv,len(t))
+
+def test_bj_random_miso():
+    n = 2
+    ny = 1
+    nu = 2
+    nf = 1 + randint(1, n ,(ny,nu))
+    nb = 1 + randint(1, n ,(ny,nu))
+    nc = 1 + randint(1, n ,(ny,nu))
+    nk = 1 + randint(1, n,(ny,nu))
+    nd = 1 + randint(1, n ,(ny,nu))
+
+    N = 1000
+    e = 0.01*randn(N,ny)    # Emulates Gaussian white noise with std = 0.01
+
+    Fo = zeros((ny,nu), dtype=object)
+    Bo = zeros((ny,nu), dtype=object)
+    Co = zeros((ny,nu), dtype=object)
+    Do = zeros((ny,nu), dtype=object)
+    u = zeros((N,nu), dtype=float)
+
+    #Generates Bo's and the inputs
+    for i in range(ny):
+        for j in range(nu):
+            Boo = -1 + 2*randn(nb[i,j]) #generate B's
+            Bo[i,j] = concatenate(([0,]*nk[i,j],Boo))
+            u[:,j] = -sqrt(3) + 2*sqrt(3)*rand(N,)
+
+    for i in range(ny):
+        for j in range(nu):
+            Fo[i,j] = gen_stable_poly(nf[i,j]+1)
+            Co[i,j] = gen_stable_poly(nc[i,j]+1)
+            Do[i,j] = gen_stable_poly(nd[i,j]+1)
+
+
+    y = lfilter(Bo[0,0], Fo[0,0], u[:,0:1], axis=0) + \
+        lfilter(Bo[0,1], Fo[0,1], u[:,1:2], axis=0) + \
+        lfilter(Co[0,0], Do[0,0], e[:,0:1], axis=0)
+
+    m = bj(nb-ones(nb.shape,dtype=int), nc, nd, nf, nk, u, y)
+    t = m.parameters
+
+    to = array([])
+    for iy in range(ny):
+        for iu in range(nu):
+            to = concatenate((to, Bo[iy,iu][nk[iy][iu]:]))
+    for iy in range(ny):
+        for iu in range(nu):
+            to = concatenate((to, Co[iy,iu][1:]))
+    for iy in range(ny):
+        for iu in range(nu):
+            to = concatenate((to, Do[iy,iu][1:]))
+    for iy in range(ny):
+        for iu in range(nu):
+            to = concatenate((to, Fo[iy,iu][1:]))
+
+    chiv = get_value_elipse(t,to,inv(m.P))
+    assert check_inside_elipse(chiv,len(t))
 
 #MIMO
 @pytest.fixture
@@ -909,35 +1777,112 @@ def test_signals_bj_mimo(test_polynomials_bj_mimo):
 
     return [u,y]
 
-def test_bj_mimo(test_signals_bj_mimo,test_polynomials_bj_mimo):
-    F11o = array(test_polynomials_bj_mimo[0])
-    F12o = array(test_polynomials_bj_mimo[1])
-    F21o = array(test_polynomials_bj_mimo[2])
-    F22o = array(test_polynomials_bj_mimo[3])
-    B11o = array(test_polynomials_bj_mimo[4])
-    B12o = array(test_polynomials_bj_mimo[5])
-    B21o = array(test_polynomials_bj_mimo[6])
-    B22o = array(test_polynomials_bj_mimo[7])
-    C1o  = array(test_polynomials_bj_mimo[8])
-    C2o  = array(test_polynomials_bj_mimo[9])
-    D1o  = array(test_polynomials_bj_mimo[10])
-    D2o  = array(test_polynomials_bj_mimo[11])
-    
-    u = test_signals_bj_mimo[0]
-    y = test_signals_bj_mimo[1]
-    
+def test_bj_mimo():
+    ny = 2
+    nu = 2
+
+    Fo = array([[[1, -1.2, 0.36], [1, -1.8, 0.91]],
+                [[1, -1.4, 0.49], [1, -1.0, 0.25]]])
+    Bo = array([[[0, 0.5, 0.1], [0, 0.9,-0.1]],
+                [[0, 0.4, 0.8], [0, 0.3,-0.2]]])
+    Co = array([[[1, 0.8, 0.16]],[[1, 0.9, 0.22]]])
+    Do = array([[[1, -1.8, 0.91]],[[1, -1.6, 0.8]]])
+
+    nf = [[2, 2], [2, 2]]
+    nb = [[1, 1], [1, 1]]
+    nc = [[2], [2]]
+    nd = [[2], [2]]
     nk = [[1, 1], [1, 1]]
-    nf = [[len(F11o)-1,len(F12o)-1],[len(F21o)-1,len(F22o)-1]]
-    nb = [[len(B11o)-(nk[0][0]+1),len(B12o)-(nk[0][1]+1)],[len(B21o)-(nk[1][0]+1),len(B22o)-(nk[1][1]+1)]]
-    nc = [[len(C1o)-1],[len(C2o)-1]]
-    nd = [[len(D1o)-1],[len(D2o)-1]]
-    e = 0.01*randn(len(y[:,0]), len(y[0,:]))
-    
+
+    N = 1000
+    #Take u as uniform
+    u = -1 + 2*randn(N, nu)
+    e = 0.01*randn(N, ny)
+
+    y1 = lfilter(Bo[0,0], Fo[0,0], u[:,0:1], axis=0) + \
+        lfilter(Bo[0,1], Fo[0,1], u[:,1:2], axis=0) + lfilter(Co[0,0], Do[0,0], e[:,0:1], axis=0)
+    y2 = lfilter(Bo[1,0], Fo[1,0], u[:,0:1], axis=0) + \
+        lfilter(Bo[1,1], Fo[1,1], u[:,1:2], axis=0) + lfilter(Co[1,0], Do[1,0], e[:,1:2], axis=0)
+    y = concatenate((y1, y2), axis=1)
+
     m = bj(nb, nc, nd, nf, nk, u, y)
-    y1 = lfilter(m.B[0,0], m.F[0,0], u[:,0:1], axis=0) + lfilter(m.B[0,1], m.F[0,1], u[:,1:2], axis=0) + lfilter(m.C[0], m.D[0], e[:,0:1], axis=0)
-    y2 = lfilter(m.B[1,0] ,m.F[1,0], u[:,0:1], axis=0) + lfilter(m.B[1,1], m.F[1,1], u[:,1:2], axis=0) + lfilter(m.C[1], m.D[1], e[:,1:2], axis=0)
-    yhat = concatenate((y1, y2), axis=1)
-    # TODO
+    t = m.parameters
+
+    to = array([])
+    for iy in range(ny):
+        for iu in range(nu):
+            to = concatenate((to, Fo[iy,iu][1:]))
+    for iy in range(ny):
+        for iu in range(nu):
+            to = concatenate((to, Bo[iy,iu][nk[iy][iu]:]))
+    for iy in range(ny):
+        for iu in range(1):
+            to = concatenate((to, Co[iy,iu][1:]))
+    for iy in range(ny):
+        for iu in range(1):
+            to = concatenate((to, Do[iy,iu][1:]))
+
+    chiv = get_value_elipse(t,to,inv(m.P))
+    assert check_inside_elipse(chiv,len(t))
+
+def test_bj_random_mimo():
+    n = 2
+    ny = 2
+    nu = 2
+    nf = 1 + randint(1, n ,(ny,nu))
+    nb = 1 + randint(1, n ,(ny,nu))
+    nc = 1 + randint(1, n ,(ny,nu))
+    nk = 1 + randint(1, n,(ny,nu))
+    nd = 1 + randint(1, n ,(ny,nu))
+
+    N = 1000
+    e = 0.01*randn(N,ny)    # Emulates Gaussian white noise with std = 0.01
+
+    Fo = zeros((ny,nu), dtype=object)
+    Bo = zeros((ny,nu), dtype=object)
+    Co = zeros((ny,nu), dtype=object)
+    Do = zeros((ny,nu), dtype=object)
+    u = zeros((N,nu), dtype=float)
+
+    #Generates Bo's and the inputs
+    for i in range(ny):
+        for j in range(nu):
+            Boo = -1 + 2*randn(nb[i,j]) #generate B's
+            Bo[i,j] = concatenate(([0,]*nk[i,j],Boo))
+            u[:,j] = -sqrt(3) + 2*sqrt(3)*rand(N,)
+
+    for i in range(ny):
+        for j in range(nu):
+            Fo[i,j] = gen_stable_poly(nf[i,j]+1)
+            Co[i,j] = gen_stable_poly(nc[i,j]+1)
+            Do[i,j] = gen_stable_poly(nd[i,j]+1)
+
+
+    y1 = lfilter(Bo[0,0], Fo[0,0], u[:,0:1], axis=0) + \
+        lfilter(Bo[0,1], Fo[0,1], u[:,1:2], axis=0) + lfilter(Co[0,0], Do[0,0], e[:,0:1], axis=0)
+    y2 = lfilter(Bo[1,0], Fo[1,0], u[:,0:1], axis=0) + \
+        lfilter(Bo[1,1], Fo[1,1], u[:,1:2], axis=0) + lfilter(Co[1,0], Do[1,0], e[:,1:2], axis=0)
+    y = concatenate((y1, y2), axis=1)
+
+    m = bj(nb-ones(nb.shape,dtype=int), nc, nd, nf, nk, u, y)
+    t = m.parameters
+
+    to = array([])
+    for iy in range(ny):
+        for iu in range(nu):
+            to = concatenate((to, Bo[iy,iu][nk[iy][iu]:]))
+    for iy in range(ny):
+        for iu in range(nu):
+            to = concatenate((to, Co[iy,iu][1:]))
+    for iy in range(ny):
+        for iu in range(nu):
+            to = concatenate((to, Do[iy,iu][1:]))
+    for iy in range(ny):
+        for iu in range(nu):
+            to = concatenate((to, Fo[iy,iu][1:]))
+
+    chiv = get_value_elipse(t,to,inv(m.P))
+    assert check_inside_elipse(chiv,len(t))
 # -----------------  -----------------
 # Defines sets of arguments for tests that request the respective fixtures
 # Here, the values of na to nk are varied
