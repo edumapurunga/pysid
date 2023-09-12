@@ -113,17 +113,25 @@ def sortmat(A):
 
 def fir(nb, nk, u, y):
     """
-    This function estimates a FIR model based on the input-ouput data provided
-    in the form of vectors (u, y). This particular function returns the
-    polynomial B(q) from the following FIR model:
-        y(t) = B(q)u(t) + e(t)
-    Inputs:
-        nb - a scalar (or a matrix ny x nu)
-        nk - a scalar (or a matrix ny x nu)
-        u  - data input - vector (or matrix N x nu)
-        y  - data output - vector (or matrix N x ny)
-    Outputs:
-        B - vector containing the polynomial B(q)
+    Estimates a FIR model based on input (u(t)) and output (y(t)) vectors.
+    Returns the polynomial B(q) relative to the MIMO FIR model with nu inputs
+    and ny outputs, also affected by white gaussian noise e(t), as follows:
+        y(t) = B(q)*u(t) + e(t)   
+
+    Parameters
+    ----------
+    nb : array_like
+        Array of integers (ny x nu) that represents the polynomial orders for B(q).
+    nk : array_like
+        Array of integers (ny x nu) that represents the model's time delay.
+    u : array_like
+        Input data array.
+    y : array_like
+        Output data array.
+    Returns
+    -------
+    B : ndarray
+        Array containing the polynomial coefficients of B(q).
     """
     # Transform everything in array for use with numpy
     _, nb, _, _, _, nk, u, y = chckin([], nb, [], [], [], nk, u, y)
@@ -175,19 +183,30 @@ def fir(nb, nk, u, y):
 
 def arx(na, nb, nk, u, y, opt=0):
     """
-    This function estimates a ARX model based on the input-ouput data provided
-    in the form of vectors (u, y). This particular function returns the
-    polynomials A(q) and B(q) from the following ARX model:
-        A(q)y(t) = B(q)u(t) + e(t)
-    Inputs:
-        na - a scalar (or a matrix ny x ny)
-        nb - a scalar (or a matrix ny x nu)
-        nk - a scalar (or a matrix ny x nu)
-        u  - data input - vector (or matrix N x nu)
-        y  - data output - vector (or matrix N x ny)
-    Outputs:
-        A - vector containing the polynomial A(q)
-        B - vector containing the polynomial B(q)
+    Estimates an ARX model based on input (u(t)) and output (y(t)) vectors.
+    Returns the polynomials A(q) and B(q) relative to the MIMO ARX model with
+    nu inputs and ny outputs, also affected by white gaussian noise e(t), 
+    as follows:
+        A(q)*y(t) = B(q)*u(t) + e(t)   
+        
+    Parameters
+    ----------
+    na : array_like
+        Array of integers (ny x ny) that represents the polynomial orders for A(q).        
+    nb : array_like
+        Array of integers (ny x nu) that represents the polynomial orders for B(q).
+    nk : array_like
+        Array of integers (ny x nu) that represents the model's time delay.
+    u : array_like
+        Input data array.
+    y : array_like
+        Output data array.
+    Returns
+    -------
+    A : ndarray
+        Array containing the polynomial coefficients of A(q).
+    B : ndarray
+        Array containing the polynomial coefficients of B(q).
     """
     # Transform everything in array for use with numpy
     na, nb, _, _, _, nk, u, y = chckin(na, nb, [], [], [], nk, u, y)
@@ -254,21 +273,34 @@ def arx(na, nb, nk, u, y, opt=0):
 
 def armax(na, nb, nc, nk, u, y):
     """
-    This function estimates an ARMAX model based on the input-ouput data provided
-    in the form of vectors (u, y). This particular function returns the
-    polynomials A(q), B(q) and C(q) from the following ARMAX model:
-        A(q)y(t) = B(q)u(t) + C(q)e(t)
-    Inputs:
-        na - a scalar (or a matrix ny x ny)
-        nb - a scalar (or a matrix ny x nu)
-        nc - a scalar (or a matrix ny x 1)
-        nk - a scalar (or a matrix ny x nu)
-        u  - data input - vector (or matrix N x nu)
-        y  - data output - vector (or matrix N x ny)
-    Outputs:
-        A - vector containing the polynomial A(q)
-        B - vector containing the polynomial B(q)
-        C - vector containing the polynomial C(q)
+    Estimates an ARMAX model based on input (u(t)) and output (y(t)) vectors.
+    Returns the polynomials A(q), B(q) and C(q) relative to the MIMO ARMAX
+    model with nu inputs and ny outputs, also affected by white gaussian
+    noise e(t), as follows:
+        A(q)*y(t) = B(q)*u(t) + C(q)*e(t)   
+        
+    Parameters
+    ----------
+    na : array_like
+        Array of integers (ny x ny) that represents the polynomial orders for A(q).        
+    nb : array_like
+        Array of integers (ny x nu) that represents the polynomial orders for B(q).
+    nc : array_like
+        Array of integers (ny x 1) that represents the polynomial orders for C(q).
+    nk : array_like
+        Array of integers (ny x nu) that represents the model's time delay.
+    u : array_like
+        Input data array.
+    y : array_like
+        Output data array.
+    Returns
+    -------
+    A : ndarray
+        Array containing the polynomial coefficients of A(q).
+    B : ndarray
+        Array containing the polynomial coefficients of B(q).
+    C : ndarray
+        Array containing the polynomial coefficients of C(q).
     """
     # Transform everything into array
     na, nb, nc, _, _, nk, u, y = chckin(na, nb, nc, [], [], nk, u, y)
@@ -418,19 +450,30 @@ def armax(na, nb, nc, nk, u, y):
 
 def oe(nb, nf, nk, u, y):
     """
-    This function estimates an OE model based on the input-ouput data provided
-    in the form of vectors (u, y). This particular function returns the
-    polynomials F(q) and B(q)  from the following OE model:
-        y(t) = (B(q)/F(q))u(t) + e(t)
-    Inputs:
-        nb - a scalar (or a matrix ny x nu)
-        nf - a scalar (or a matrix ny x nu)
-        nk - a scalar (or a matrix ny x nu)
-        u  - data input - vector (or matrix N x nu)
-        y  - data output - vector (or matrix N x ny)
-    Outputs:
-        B - vector containing the polynomial B(q)
-        F - vector containing the polynomial F(q)
+    Estimates an OE model based on input (u(t)) and output (y(t)) vectors.
+    Returns the polynomials B(q) and F(q) relative to the MIMO OE model
+    with nu inputs and ny outputs, also affected by white gaussian noise e(t), 
+    as follows:
+        y(t) = [B(q)/F(q)]*u(t) + e(t)   
+        
+    Parameters
+    ----------
+    nb : array_like
+        Array of integers (ny x nu) that represents the polynomial orders for B(q).
+    nf : array_like
+        Array of integers (ny x nu) that represents the polynomial orders for F(q).
+    nk : array_like
+        Array of integers (ny x nu) that represents the model's time delay.
+    u : array_like
+        Input data array.
+    y : array_like
+        Output data array.
+    Returns
+    -------
+    B : ndarray
+        Array containing the polynomial coefficients of B(q).
+    F : ndarray
+        Array containing the polynomial coefficients of F(q).
     """
     # Transform everything into array
     _, nb, _, _, nf, nk, u, y = chckin([], nb, [], [], nf, nk, u, y)
@@ -540,23 +583,38 @@ def oe(nb, nf, nk, u, y):
 
 def bj(nb, nc, nd, nf, nk, u, y):
     """
-    This function estimates a BJ model based on the input-ouput data provided
-    in the form of vectors (u, y). This particular function returns the
-    polynomials B(q), F(q), C(q) and D(q)  from the following BJ model:
-        y(t) = (B(q)/F(q))u(t) + (C(q)/D(q))e(t)
-    Inputs:
-        nb - a scalar (or a matrix ny x nu)
-        nc - a scalar (or a matrix ny x 1)
-        nd - a scalar (or a matrix ny x 1)
-        nf - a scalar (or a matrix ny x nu)
-        nk - a scalar (or a matrix ny x nu)
-        u  - data input - vector (or matrix N x nu)
-        y  - data output - vector (or matrix N x ny)
-    Outputs:
-        B - vector containing the polynomial B(q)
-        C - vector containing the polynomial C(q)
-        D - vector containing the polynomial D(q)
-        F - vector containing the polynomial F(q)
+    Estimates an BJ model based on input (u(t)) and output (y(t)) vectors.
+    Returns the polynomials B(q), F(q), C(q) and D(q) relative to the MIMO
+    BJ model with nu inputs and ny outputs, also affected by white gaussian
+    noise e(t), as follows:
+        y(t) = [B(q)/F(q)]*u(t) + [C(q)/D(q)]*e(t)   
+        
+    Parameters
+    ----------
+    nb : array_like
+        Array of integers (ny x nu) that represents the polynomial orders for B(q).
+    nc : array_like
+        Array of integers (ny x 1) that represents the polynomial orders for C(q).
+    nd : array_like
+        Array of integers (ny x 1) that represents the polynomial orders for D(q).
+    nf : array_like
+        Array of integers (ny x nu) that represents the polynomial orders for F(q).
+    nk : array_like
+        Array of integers (ny x nu) that represents the model's time delay.
+    u : array_like
+        Input data array.
+    y : array_like
+        Output data array.
+    Returns
+    -------
+    B : ndarray
+        Array containing the polynomial coefficients of B(q).
+    C : ndarray
+        Array containing the polynomial coefficients of C(q).
+    D : ndarray
+        Array containing the polynomial coefficients of D(q).
+    F : ndarray
+        Array containing the polynomial coefficients of F(q).
     """
     _, nb, nc, nd, nf, nk, u, y = chckin([], nb, nc, nd, nf, nk, u, y)
     # Input Handling
