@@ -822,7 +822,7 @@ def test_polynomials_armax_mimo():
     B22o = array(([0.65,0.2]))
 
     C1o  = array([1, 0.8,-0.1])
-    C2o  = array([1, 0.9,-0.2])
+    C2o  = array([1,-0.9, 0.2])
 
     return [A11o,A12o,A21o,A22o,B11o,B12o,B21o,B22o,C1o,C2o]
 
@@ -878,7 +878,7 @@ def test_armax_mimo():
                 [[0, 0.2,-0.3], [0, 0.1,-0.8]]])
 
     Co = array([[[1, 0.8,-0.1]],
-                [[1, 0.9,-0.2]]])
+                [[1, -0.9,0.2]]])
 
     N = 1000
     # Take u as uniform
@@ -901,8 +901,8 @@ def test_armax_mimo():
          lfilter(convolve(Ao[0,0], Co[1,0]), det, e[:, 1:2], axis=0)
 
     y = concatenate((y1, y2), axis=1)
-    # m = armax(na,nb,nc,nk,u,y)
-    m = els(na,nb,nc,nk,u,y)
+    m = armax(na,nb,nc,nk,u,y)
+    #m = els(na,nb,nc,nk,u,y)
     t = m.parameters
     t0 = array([])
     for i in range(ny):
