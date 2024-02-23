@@ -204,9 +204,9 @@ def test_arx_simo():
         for j in range(ny): # for each output
             for k in range(ny): # to travel in cols of the Ao matrix
                 # [::-1] makes the array backwards
-                y[i,j] += dot(Ao[j,k][1:],-y[i-(len(Ao[j,k])-1):i,k][::-1])
+                y[i,j] += dot(Ao[j,k][1:],-y[i-na[j, k]:i,k][::-1])
             y[i,j] += dot(Bo[j,0][nk[j,0]:],u[i-len(Bo[j,0][nk[j,0]:]):i,0][::-1])
-        y[i,j] += e[i,j]
+            y[i,j] += e[i,j]
 
     t0 = array([])
     for i in range(ny):
