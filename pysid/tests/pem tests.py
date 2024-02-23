@@ -235,7 +235,7 @@ def test_arx_mimo():
     Ao = zeros((ny,ny),dtype=object)
     Bo = zeros((ny,nu),dtype=object)
     Ao[0,0] = [1, -1.2, 0.36]
-    Ao[0,1] = [0, 0.2, 0.1]
+    Ao[0,1] = [0, -0.2, 0.1]
     Ao[1,0] = [0, -0.05, 0.09]
     Ao[1,1] = [1, -1.4, 0.49]
 
@@ -253,16 +253,15 @@ def test_arx_mimo():
         for j in range(ny):
             u[:,i] = -sqrt(3) + 2*sqrt(3)*rand(N,)
 
-    y = zeros((N,ny),dtype=float) #y's, com ny linhas e N colunas, cada linha é uma saida
+    y = zeros((N,ny), dtype=float) #y's, com ny linhas e N colunas, cada linha é uma saida
     L = max(amax(na),amax(nb+nk)) #to know were to start
     for i in range(L,N):
         for j in range(ny): # for each output
             for k in range(ny): # to travel in cols of the Ao matrix
-                # [::-1] makes the array backwards
-                y[i,j] += dot(Ao[j,k][1:],-y[i-(len(Ao[j,k])-1):i,k][::-1])
+                y[i,j] += dot(Ao[j, k][1:],-y[i-na[j, k]:i,k][::-1])
             for k in range(nu):# for each input
                 y[i,j] += dot(Bo[j,k][nk[j,k]:],u[i-len(Bo[j,k][nk[j,k]:]):i,k][::-1])
-        y[i,j] += e[i,j]
+            y[i,j] += e[i,j]
 
     t0 = array([])
     for i in range(ny):
