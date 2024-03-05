@@ -1002,7 +1002,7 @@ def test_polynomials_oe_siso():
     Ao = [1, -1.2, 0.36]
     Bo = [0, 0.5, 0.1]
 
-    return [Ao, Bo]
+    t0 = array(Bo[1:] + Ao[1:])
 
 @pytest.fixture
 def test_signals_oe_siso(test_polynomials_oe_siso):
@@ -1038,7 +1038,7 @@ def test_oe_siso(test_signals_oe_siso, test_polynomials_oe_siso):
 
     m = oe(nb, nf, nk, u, y)
     t = m.parameters
-    chivalue = get_value_elipse(t, t0, inv(m.P))
+    chivalue = get_value_elipse(t0, t, inv(m.P))
     assert check_inside_elipse(chivalue, len(t))
 
 def test_oe_random_siso():
@@ -1097,10 +1097,10 @@ def test_oe_miso():
     t0 = array([])
     for i in range(ny):
         for j in range(nu):
-            t0 = concatenate((t0, Fo[i,j][1:]))
+            t0 = concatenate((t0, Bo[i,j][nk[i][j]:]))
     for i in range(ny):
         for j in range(nu):
-            t0 = concatenate((t0, Bo[i,j][nk[i][j]:]))
+            t0 = concatenate((t0, Fo[i,j][1:]))
     for i in range(len(t0)):
         print(t0[i],"\t##\t",t[i])
 
@@ -1185,10 +1185,10 @@ def test_oe_simo():
     t0 = array([])
     for i in range(ny):
         for j in range(nu):
-            t0 = concatenate((t0, Fo[i,j][1:]))
+            t0 = concatenate((t0, Bo[i,j][nk[i][j]:]))
     for i in range(ny):
         for j in range(nu):
-            t0 = concatenate((t0, Bo[i,j][nk[i][j]:]))
+            t0 = concatenate((t0, Fo[i,j][1:]))
     for i in range(len(t0)):
         print(t0[i],"\t##\t",t[i])
 
@@ -1278,10 +1278,10 @@ def test_oe_mimo():
     to = array([])
     for i in range(ny):
         for j in range(nu):
-            to = concatenate((to, Fo[i,j][1:]))
+            to = concatenate((to, Bo[i,j][nk[i][j]:]))
     for i in range(ny):
         for j in range(nu):
-            to = concatenate((to, Bo[i,j][nk[i][j]:]))
+            to = concatenate((to, Fo[i,j][1:]))
     for i in range(len(to)):
         print(to[i],"\t##\t",t[i])
 
