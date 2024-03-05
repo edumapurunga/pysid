@@ -204,9 +204,9 @@ def test_arx_simo():
         for j in range(ny): # for each output
             for k in range(ny): # to travel in cols of the Ao matrix
                 # [::-1] makes the array backwards
-                y[i,j] += dot(Ao[j,k][1:],-y[i-(len(Ao[j,k])-1):i,k][::-1])
+                y[i,j] += dot(Ao[j,k][1:],-y[i-na[j, k]:i,k][::-1])
             y[i,j] += dot(Bo[j,0][nk[j,0]:],u[i-len(Bo[j,0][nk[j,0]:]):i,0][::-1])
-        y[i,j] += e[i,j]
+            y[i,j] += e[i,j]
 
     t0 = array([])
     for i in range(ny):
@@ -235,7 +235,7 @@ def test_arx_mimo():
     Ao = zeros((ny,ny),dtype=object)
     Bo = zeros((ny,nu),dtype=object)
     Ao[0,0] = [1, -1.2, 0.36]
-    Ao[0,1] = [0, 0.2, 0.1]
+    Ao[0,1] = [0, -0.2, 0.1]
     Ao[1,0] = [0, -0.05, 0.09]
     Ao[1,1] = [1, -1.4, 0.49]
 
@@ -253,16 +253,15 @@ def test_arx_mimo():
         for j in range(ny):
             u[:,i] = -sqrt(3) + 2*sqrt(3)*rand(N,)
 
-    y = zeros((N,ny),dtype=float) #y's, com ny linhas e N colunas, cada linha é uma saida
+    y = zeros((N,ny), dtype=float) #y's, com ny linhas e N colunas, cada linha é uma saida
     L = max(amax(na),amax(nb+nk)) #to know were to start
     for i in range(L,N):
         for j in range(ny): # for each output
             for k in range(ny): # to travel in cols of the Ao matrix
-                # [::-1] makes the array backwards
-                y[i,j] += dot(Ao[j,k][1:],-y[i-(len(Ao[j,k])-1):i,k][::-1])
+                y[i,j] += dot(Ao[j, k][1:],-y[i-na[j, k]:i,k][::-1])
             for k in range(nu):# for each input
                 y[i,j] += dot(Bo[j,k][nk[j,k]:],u[i-len(Bo[j,k][nk[j,k]:]):i,k][::-1])
-        y[i,j] += e[i,j]
+            y[i,j] += e[i,j]
 
     t0 = array([])
     for i in range(ny):
@@ -823,7 +822,7 @@ def test_polynomials_armax_mimo():
     B22o = array(([0.65,0.2]))
 
     C1o  = array([1, 0.8,-0.1])
-    C2o  = array([1, 0.9,-0.2])
+    C2o  = array([1,-0.9, 0.2])
 
     return [A11o,A12o,A21o,A22o,B11o,B12o,B21o,B22o,C1o,C2o]
 
@@ -879,7 +878,7 @@ def test_armax_mimo():
                 [[0, 0.2,-0.3], [0, 0.1,-0.8]]])
 
     Co = array([[[1, 0.8,-0.1]],
-                [[1, 0.9,-0.2]]])
+                [[1, -0.9,0.2]]])
 
     N = 1000
     # Take u as uniform
@@ -902,8 +901,8 @@ def test_armax_mimo():
          lfilter(convolve(Ao[0,0], Co[1,0]), det, e[:, 1:2], axis=0)
 
     y = concatenate((y1, y2), axis=1)
-    # m = armax(na,nb,nc,nk,u,y)
-    m = els(na,nb,nc,nk,u,y)
+    m = armax(na,nb,nc,nk,u,y)
+    #m = els(na,nb,nc,nk,u,y)
     t = m.parameters
     t0 = array([])
     for i in range(ny):
