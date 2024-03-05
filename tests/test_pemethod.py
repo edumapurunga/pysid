@@ -578,7 +578,7 @@ def test_armax_random_simo():
     #         Ao[i,j] = gen_stable_poly(na[i,j])
     #         if i != j:
     #             Ao[i,j][0] = 0
-    Ao, det = gen_stable_model2x2(na)
+    Ao = gen_stable_model2x2(na)
 
     Bo = zeros((ny,nu), dtype=object)
     Co = zeros((ny,1), dtype=object)
@@ -944,7 +944,7 @@ def test_armax_random_mimo():
     #         Ao[i,j] = gen_stable_poly(na[i,j])
     #         if i != j:
     #             Ao[i,j][0] = 0
-    Ao, det = gen_stable_model2x2(na)
+    Ao = gen_stable_model2x2(na)
 
     Bo = zeros((ny,nu), dtype=object)
     Co = zeros((ny,1), dtype=object)
